@@ -296,44 +296,43 @@ const Pos: React.FC = () => {
                   <div className="cart-card__body">
                     <p className="cart-card__name">{line.product.name}</p>
                     <p className="cart-card__unit">
-                      {formatRupiah(line.product.selling_price)} / {line.product.unit}
+                      {formatRupiah(line.product.selling_price)}
                     </p>
-
-                    <div className="cart-card__controls">
-                      <span className="stepper">
-                        <button
-                          type="button"
-                          className="stepper__btn"
-                          aria-label={`Kurangi ${line.product.name}`}
-                          onClick={() => cart.changeQuantity(line.product.id, -1)}
-                        >
-                          −
-                        </button>
-                        <span className="stepper__value">{line.quantity}</span>
-                        <button
-                          type="button"
-                          className="stepper__btn"
-                          aria-label={`Tambah ${line.product.name}`}
-                          onClick={() => cart.changeQuantity(line.product.id, 1)}
-                        >
-                          +
-                        </button>
-                      </span>
-
-                      <button
-                        type="button"
-                        className="cart-card__remove"
-                        aria-label={`Hapus ${line.product.name}`}
-                        onClick={() => cart.remove(line.product.id)}
-                      >
-                        <IonIcon icon={trashOutline} /> Hapus
-                      </button>
-                    </div>
+                    <p className="cart-card__total">
+                      {formatRupiah(line.product.selling_price * line.quantity)}
+                    </p>
                   </div>
 
-                  <span className="cart-card__total">
-                    {formatRupiah(line.product.selling_price * line.quantity)}
-                  </span>
+                  <div className="cart-card__controls">
+                    <span className="stepper">
+                      <button
+                        type="button"
+                        className="stepper__btn"
+                        aria-label={`Kurangi ${line.product.name}`}
+                        onClick={() => cart.changeQuantity(line.product.id, -1)}
+                      >
+                        −
+                      </button>
+                      <span className="stepper__value">{line.quantity}</span>
+                      <button
+                        type="button"
+                        className="stepper__btn"
+                        aria-label={`Tambah ${line.product.name}`}
+                        onClick={() => cart.changeQuantity(line.product.id, 1)}
+                      >
+                        +
+                      </button>
+                    </span>
+
+                    <button
+                      type="button"
+                      className="cart-card__remove"
+                      aria-label={`Hapus ${line.product.name}`}
+                      onClick={() => cart.remove(line.product.id)}
+                    >
+                      <IonIcon icon={trashOutline} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

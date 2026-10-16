@@ -754,8 +754,8 @@ select.input {
 }
 
 /* --- POS cart cards ------------------------------------------------------
-   Line item from the POS mockup: thumbnail, name, unit price and controls on
-   the left, line total on the right. */
+   Line item: thumbnail, then name / unit price / line total stacked on the
+   left, with the quantity stepper and a delete button on the right. */
 
 .cart-card {
   display: flex;
@@ -772,7 +772,6 @@ select.input {
   height: 52px;
   border-radius: 14px;
   font-size: 20px;
-  align-self: flex-start;
 }
 
 .cart-card__body {
@@ -780,6 +779,7 @@ select.input {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .cart-card__name {
@@ -792,46 +792,39 @@ select.input {
   white-space: nowrap;
 }
 
+/* Unit price, then the line total in blue below it. */
 .cart-card__unit {
   font-size: 12.6px;
   color: var(--app-muted);
-  margin: 3px 0 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.cart-card__total {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--app-blue);
+  margin: 0;
   white-space: nowrap;
 }
 
 .cart-card__controls {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 8px;
+  gap: 10px;
 }
 
 .cart-card__remove {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   border: none;
   background: none;
-  padding: 0;
-  font-family: inherit;
-  font-size: 12.6px;
-  font-weight: 600;
+  padding: 2px;
   color: var(--app-red);
+  font-size: 19.8px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
   cursor: pointer;
-}
-
-.cart-card__remove ion-icon {
-  font-size: 17px;
-}
-
-.cart-card__total {
-  flex: none;
-  font-size: 15.3px;
-  font-weight: 800;
-  color: var(--app-blue);
-  white-space: nowrap;
 }
 
 /* --- Stepper ------------------------------------------------------------- */
@@ -839,18 +832,16 @@ select.input {
 .stepper {
   display: inline-flex;
   align-items: center;
-  background: #fff;
-  border: 1px solid var(--app-line-strong);
-  border-radius: 999px;
+  gap: 4px;
 }
 
 .stepper__btn {
-  width: 38px;
-  height: 34px;
-  border-radius: 999px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   border: none;
-  background: transparent;
-  color: var(--app-blue);
+  background: var(--app-line);
+  color: var(--app-muted);
   font-size: 16.2px;
   line-height: 1;
   display: grid;
@@ -858,21 +849,16 @@ select.input {
   cursor: pointer;
 }
 
-/* The mockup greys out "−" and keeps "+" blue. */
-.stepper__btn:first-child {
-  color: var(--app-muted);
+.stepper__btn:active {
+  background: var(--app-line-strong);
 }
 
 .stepper__value {
-  min-width: 38px;
-  padding: 0 6px;
+  min-width: 24px;
   text-align: center;
   font-weight: 700;
   font-size: 13.5px;
-  line-height: 32px;
   color: var(--app-ink);
-  border-left: 1px solid var(--app-line);
-  border-right: 1px solid var(--app-line);
 }
 
 /* --- Totals -------------------------------------------------------------- */
