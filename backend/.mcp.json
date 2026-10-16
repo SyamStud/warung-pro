@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "wsl.exe",
+            "args": [
+                "/home/lenovo/.config/herd-lite/bin/php",
+                "/home/lenovo/Products/Warung/backend/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}

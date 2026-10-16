@@ -1,0 +1,84 @@
+/**
+ * Domain types shared across the app.
+ *
+ * These mirror the Laravel API JSON exactly (snake_case), as defined in
+ * PLAN.md §5–6. Keep them in sync with the backend resources when the
+ * contract changes.
+ */
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  sku: string;
+  barcode: string | null;
+  unit: string;
+  selling_price: number;
+  category_id: number | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TransactionItem {
+  id: number;
+  product_id: number | null;
+  product_name: string;
+  sku: string | null;
+  barcode: string | null;
+  unit_price: number;
+  quantity: number;
+  line_total: number;
+}
+
+export interface Transaction {
+  id: number;
+  transaction_number: string;
+  status: 'paid' | 'void';
+  subtotal: number;
+  discount_amount: number;
+  total: number;
+  paid_amount: number;
+  change_amount: number;
+  items?: TransactionItem[];
+  created_at: string;
+}
+
+/** Laravel paginator shape (`data` + `meta`). */
+export interface Paginated<T> {
+  data: T[];
+  meta: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
+/** Consistent API error envelope (PLAN.md §6.5). */
+export interface ApiErrorBody {
+  error: {
+    code:
+      | 'UNAUTHENTICATED'
+      | 'FORBIDDEN'
+      | 'NOT_FOUND'
+      | 'VALIDATION_ERROR'
+      | 'CONFLICT'
+      | 'RATE_LIMITED'
+      | 'SERVER_ERROR'
+      | 'REQUEST_ERROR';
+    message: string;
+    details?: Record<string, string[]>;
+  };
+}
