@@ -20,3 +20,13 @@ export function formatDateTime(value: string): string {
     minute: '2-digit',
   }).format(date);
 }
+
+/** Keeps only the digits of a typed amount, e.g. "Rp 20.000" -> "20000". */
+export function digitsOnly(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
+/** Groups digits with dots while typing, e.g. "20000" -> "20.000". */
+export function formatThousands(value: string): string {
+  return digitsOnly(value).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}

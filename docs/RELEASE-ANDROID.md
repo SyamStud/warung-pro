@@ -125,7 +125,7 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 
 ### POS
 - [ ] Keranjang, ubah kuantitas, hapus item; tambah item dari Cek Harga.
-- [ ] Diskon + pembayaran; total/kembalian sesuai hitungan server.
+- [ ] Pembayaran Tunai & Non Tunai; total/kembalian sesuai hitungan server.
 - [ ] Metode **Tunai** dan **Non Tunai** tersimpan; filter Riwayat bekerja.
 - [ ] Bayar di bawah total ditolak.
 - [ ] Klik **Bayar** dua kali / retry jaringan → hanya **satu** transaksi.

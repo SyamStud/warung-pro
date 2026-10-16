@@ -8,18 +8,18 @@ import {
   useIonAlert,
   useIonToast,
 } from '@ionic/react';
-import { cashOutline, cardOutline, cartOutline } from 'ionicons/icons';
+import { cartOutline } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import ConnectionBanner from '../components/ConnectionBanner';
 import PageHeader from '../components/PageHeader';
 import { useCart } from '../cart/useCart';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
-import { formatRupiah } from '../lib/format';
+import { digitsOnly, formatRupiah, formatThousands } from '../lib/format';
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '../types';
 
 const CASH_SUGGESTIONS = [20000, 50000, 100000];
 
-/** 9 · Pembayaran — discount, payment method, cash received, and checkout. */
+/** 9 · Pembayaran — payment method, cash received, and checkout. */
 const Payment: React.FC = () => {
   const navigate = useNavigate();
   const cart = useCart();
@@ -95,11 +95,8 @@ const Payment: React.FC = () => {
         <ConnectionBanner />
 
         <div className="screen">
-          <div className="card">
-            <div className="card__head">
-              <h2 className="card__title">Ringkasan pesanan</h2>
-              <span className="badge badge--blue">{cart.itemCount} item</span>
-            </div>
+          <div className="card card--summary">
+            <h2 className="card__title">Ringkasan pesanan</h2>
 
             {cart.lines.map((line) => (
               <div key={line.product.id} className="receipt-card__item">
@@ -118,50 +115,11 @@ const Payment: React.FC = () => {
             <hr className="totals__divider" />
 
             <div className="totals">
-              <div className="totals__row">
-                <span>Subtotal</span>
-                <span className="totals__value">{formatRupiah(cart.totals.subtotal)}</span>
-              </div>
-              {cart.totals.discountAmount > 0 && (
-                <div className="totals__row">
-                  <span>Diskon</span>
-                  <span className="totals__value">
-                    -{formatRupiah(cart.totals.discountAmount)}
-                  </span>
-                </div>
-              )}
               <div className="totals__row totals__row--strong">
                 <span>Total</span>
                 <span className="totals__value">{formatRupiah(Math.max(0, total))}</span>
               </div>
             </div>
-          </div>
-
-          <div className="card" style={{ marginTop: 12 }}>
-            <label className="field" style={{ marginBottom: 0 }}>
-              <span className="field__label">Diskon (Rp)</span>
-              <div className="field__row">
-                <input
-                  className="input"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={cart.discount}
-                  placeholder="0"
-                  onChange={(e) => cart.setDiscount(e.target.value)}
-                />
-                {cart.discount !== '' && (
-                  <button
-                    type="button"
-                    className="btn btn--plain"
-                    style={{ width: 'auto', paddingInline: 16 }}
-                    onClick={() => cart.setDiscount('')}
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-            </label>
           </div>
 
           <div className="card" style={{ marginTop: 12 }}>
@@ -180,7 +138,6 @@ const Payment: React.FC = () => {
                   }`}
                   onClick={() => cart.setPaymentMethod(method)}
                 >
-                  <IonIcon icon={method === 'cash' ? cashOutline : cardOutline} />{' '}
                   {PAYMENT_METHOD_LABELS[method]}
                 </button>
               ))}
@@ -192,12 +149,12 @@ const Payment: React.FC = () => {
                   <span className="field__label">Dibayar (Rp)</span>
                   <input
                     className="input"
-                    type="number"
+                    type="text"
                     inputMode="numeric"
-                    min={0}
-                    value={cart.paid}
+                    autoComplete="off"
+                    value={formatThousands(cart.paid)}
                     placeholder="0"
-                    onChange={(e) => cart.setPaid(e.target.value)}
+                    onChange={(e) => cart.setPaid(digitsOnly(e.target.value))}
                   />
                 </label>
 

@@ -225,7 +225,7 @@ Pencarian & scan, daftar keranjang dengan kontrol kuantitas, ringkasan subtotal,
 
 ### 4.7 Pembayaran (pushed)
 
-Ringkasan pesanan, input **diskon**, pemilih **metode pembayaran (Tunai / Non Tunai)**, input **dibayar** dengan pintasan nominal, dan tampilan **kembalian**. Untuk Non Tunai, nominal dianggap pas (tanpa kembalian). Tombol **Bayar** menyimpan transaksi ke server (idempotent) lalu membuka Preview Struk.
+Ringkasan pesanan ringkas (nama produk, jumlah × harga, total baris, lalu total), pemilih **metode pembayaran (Tunai / Non Tunai)**, input **dibayar** dengan pemisah ribuan dan pintasan nominal, serta tampilan **kembalian**. Untuk Non Tunai, nominal dianggap pas (tanpa kembalian). Tombol **Bayar** menyimpan transaksi ke server (idempotent) lalu membuka Preview Struk.
 
 ### 4.8 Preview Struk (pushed)
 

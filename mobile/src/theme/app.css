@@ -779,11 +779,11 @@ select.input {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 5px;
 }
 
 .cart-card__name {
-  font-size: 14.4px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--app-ink);
   margin: 0;
@@ -794,14 +794,14 @@ select.input {
 
 /* Unit price, then the line total in blue below it. */
 .cart-card__unit {
-  font-size: 12.6px;
+  font-size: 11.7px;
   color: var(--app-muted);
   margin: 0;
   white-space: nowrap;
 }
 
 .cart-card__total {
-  font-size: 13.5px;
+  font-size: 12.6px;
   font-weight: 700;
   color: var(--app-blue);
   margin: 0;
@@ -812,7 +812,7 @@ select.input {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .cart-card__remove {
@@ -820,7 +820,7 @@ select.input {
   background: none;
   padding: 2px;
   color: var(--app-red);
-  font-size: 19.8px;
+  font-size: 17.1px;
   line-height: 1;
   display: grid;
   place-items: center;
@@ -836,17 +836,22 @@ select.input {
 }
 
 .stepper__btn {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: none;
   background: var(--app-line);
   color: var(--app-muted);
-  font-size: 16.2px;
+  font-size: 15.3px;
   line-height: 1;
   display: grid;
   place-items: center;
   cursor: pointer;
+}
+
+/* Ionicons render as SVG, so the glyph sits dead-centre in the circle. */
+.stepper__btn ion-icon {
+  font-size: 15.3px;
 }
 
 .stepper__btn:active {
@@ -854,10 +859,10 @@ select.input {
 }
 
 .stepper__value {
-  min-width: 24px;
+  min-width: 20px;
   text-align: center;
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 12.6px;
   color: var(--app-ink);
 }
 
@@ -1038,6 +1043,33 @@ select.input {
 .receipt-card__item-sub {
   color: var(--app-muted);
   font-size: 10.8px;
+}
+
+/* Ringkasan pesanan (Pembayaran) is tighter than the receipt preview, which
+   keeps the receipt-ish type for the printed layout. */
+.card--summary {
+  font-size: 12.6px;
+}
+
+.card--summary .card__title {
+  margin-bottom: 16px;
+}
+
+.card--summary .receipt-card__item {
+  margin-bottom: 10px;
+}
+
+/* Give the "n × harga" line room to breathe under the product name. */
+.card--summary .receipt-card__item-sub {
+  margin-top: 3px;
+}
+
+.card--summary .totals__row {
+  font-size: 11.7px;
+}
+
+.card--summary .totals__row--strong {
+  font-size: 13.5px;
 }
 
 .receipt-card__line {

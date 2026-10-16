@@ -9,9 +9,11 @@ import {
 } from '@ionic/react';
 import {
   addCircleOutline,
+  addOutline,
   cartOutline,
   closeCircle,
   printOutline,
+  removeOutline,
   scanOutline,
   searchOutline,
   trashOutline,
@@ -269,7 +271,7 @@ const Pos: React.FC = () => {
           </div>
 
           <div className="section-head">
-            <h2 className="section-head__title">Keranjang ({cart.itemCount})</h2>
+            <h2 className="section-head__title">Keranjang</h2>
             {cart.lines.length > 0 && (
               <button type="button" className="link" onClick={cart.clear}>
                 Kosongkan
@@ -311,7 +313,7 @@ const Pos: React.FC = () => {
                         aria-label={`Kurangi ${line.product.name}`}
                         onClick={() => cart.changeQuantity(line.product.id, -1)}
                       >
-                        −
+                        <IonIcon icon={removeOutline} aria-hidden="true" />
                       </button>
                       <span className="stepper__value">{line.quantity}</span>
                       <button
@@ -320,7 +322,7 @@ const Pos: React.FC = () => {
                         aria-label={`Tambah ${line.product.name}`}
                         onClick={() => cart.changeQuantity(line.product.id, 1)}
                       >
-                        +
+                        <IonIcon icon={addOutline} aria-hidden="true" />
                       </button>
                     </span>
 
