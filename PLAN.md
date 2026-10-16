@@ -379,6 +379,8 @@ Nilai `sort`: `name`, `price_asc`, `price_desc` (selain itu → urut `id` terbar
 |---|---|---|
 | GET | `/categories` | Daftar kategori |
 | POST | `/categories` | Buat kategori |
+| PATCH | `/categories/{id}` | Ubah nama kategori |
+| DELETE | `/categories/{id}` | Hapus kategori (produk jadi tanpa kategori) |
 
 ### 6.4 Transactions
 

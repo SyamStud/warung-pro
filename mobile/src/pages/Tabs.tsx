@@ -15,15 +15,17 @@ import History from './History';
 import PriceChecker from './PriceChecker';
 import Payment from './Payment';
 import Receipt from './Receipt';
+import Categories from './Categories';
 
 /** Pushed pages: full screens with no bottom tab bar. */
-const PUSHED_PATHS = ['/tabs/check', '/tabs/payment', '/tabs/receipt'];
+const PUSHED_PATHS = ['/tabs/check', '/tabs/payment', '/tabs/receipt', '/tabs/categories'];
 
 /**
  * Bottom tab shell: Beranda · Produk · POS · Riwayat.
  *
- * Cek Harga, Pembayaran and Preview Struk are pushed pages — they live in the
- * same outlet but have no tab button, so the tab bar is hidden for them.
+ * Cek Harga, Pembayaran, Preview Struk and Kelola Kategori are pushed pages —
+ * they live in the same outlet but have no tab button, so the tab bar is hidden
+ * for them.
  */
 const Tabs: React.FC = () => {
   const { pathname } = useLocation();
@@ -40,6 +42,7 @@ const Tabs: React.FC = () => {
         <Route path="/tabs/check" element={<PriceChecker />} />
         <Route path="/tabs/payment" element={<Payment />} />
         <Route path="/tabs/receipt" element={<Receipt />} />
+        <Route path="/tabs/categories" element={<Categories />} />
 
         <Route path="/tabs" element={<Navigate to="/tabs/home" replace />} />
       </IonRouterOutlet>

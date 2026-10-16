@@ -65,20 +65,6 @@ const History: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <PageHeader
-          title="Riwayat Transaksi"
-          actions={
-            <button
-              type="button"
-              className="btn btn--icon"
-              aria-label="Pengaturan printer"
-              onClick={printer.openSettings}
-            >
-              <IonIcon icon={printOutline} />
-            </button>
-          }
-        />
-
         <IonRefresher
           slot="fixed"
           onIonRefresh={async (event) => {
@@ -89,48 +75,66 @@ const History: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <ConnectionBanner />
-
-        <div className="screen">
-          <div className="search">
-            <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nomor transaksi"
-              aria-label="Cari nomor transaksi"
-            />
-            {search !== '' && (
+        <div className="sticky-top">
+          <PageHeader
+            title="Riwayat Transaksi"
+            actions={
               <button
                 type="button"
-                className="search__clear"
-                aria-label="Hapus pencarian"
-                onClick={() => setSearch('')}
+                className="btn btn--icon"
+                aria-label="Pengaturan printer"
+                onClick={printer.openSettings}
               >
-                <IonIcon icon={closeCircle} />
+                <IonIcon icon={printOutline} />
               </button>
-            )}
-          </div>
+            }
+          />
 
-          <div className="chip-row" style={{ marginTop: 12 }}>
-            {METHOD_FILTERS.map((filter) => (
-              <button
-                key={filter.value}
-                type="button"
-                className={`chip${method === filter.value ? ' chip--active' : ''}`}
-                onClick={() => setMethod(filter.value)}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
+          <ConnectionBanner />
 
-          <div className="section-head">
-            <h2 className="section-head__title">
-              {transactions.length > 0 ? `${transactions.length} transaksi` : 'Transaksi'}
-            </h2>
-          </div>
+          <div className="sticky-top__body">
+            <div className="search">
+              <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nomor transaksi"
+                aria-label="Cari nomor transaksi"
+              />
+              {search !== '' && (
+                <button
+                  type="button"
+                  className="search__clear"
+                  aria-label="Hapus pencarian"
+                  onClick={() => setSearch('')}
+                >
+                  <IonIcon icon={closeCircle} />
+                </button>
+              )}
+            </div>
 
+            <div className="chip-row" style={{ marginTop: 12 }}>
+              {METHOD_FILTERS.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  className={`chip${method === filter.value ? ' chip--active' : ''}`}
+                  onClick={() => setMethod(filter.value)}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="section-head" style={{ marginBottom: 0 }}>
+              <h2 className="section-head__title">
+                {transactions.length > 0 ? `${transactions.length} transaksi` : 'Transaksi'}
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        <div className="screen screen--flush">
           {query.isLoading && (
             <div className="spinner-center">
               <IonSpinner name="crescent" />

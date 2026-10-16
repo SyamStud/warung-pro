@@ -39,6 +39,23 @@ textarea {
   padding: 0 16px 28px;
 }
 
+/* --- Sticky page top -----------------------------------------------------
+   Riwayat & Katalog keep the header, search and filters pinned at the top;
+   only the card list scrolls beneath them. */
+
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--app-bg);
+}
+
+.sticky-top__body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4px 16px 10px;
+}
+
 /* --- In-page header ------------------------------------------------------
    The title bar lives inside the page content (no Ionic toolbar), sitting
    flat on the app background: optional back arrow, title, right-side actions. */
@@ -282,6 +299,13 @@ textarea {
   color: var(--app-ink);
 }
 
+/* Declared after .btn--icon so the red tint survives the white default. */
+.btn--icon.btn--danger {
+  background: var(--app-red-soft);
+  border-color: transparent;
+  color: var(--app-red);
+}
+
 .btn-row {
   display: flex;
   gap: 10px;
@@ -404,6 +428,116 @@ select.input {
   line-height: 1;
   cursor: pointer;
   padding: 0;
+}
+
+/* --- Search results popup (POS) ------------------------------------------
+   Results float over the cart instead of pushing it down the page. */
+
+.search-wrap {
+  position: relative;
+}
+
+/* Stays above the backdrop so the field keeps working while results show. */
+.search-wrap > .search {
+  position: relative;
+  z-index: 16;
+}
+
+/* Dims the page behind the results popup. */
+.search-pop__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: rgba(15, 23, 42, 0.42);
+  animation: search-pop-fade 0.14s ease-out;
+}
+
+@keyframes search-pop-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.search-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--app-surface);
+  border-radius: 20px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  padding: 10px;
+  animation: search-pop-in 0.14s ease-out;
+}
+
+@keyframes search-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-pop__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px 8px;
+}
+
+.search-pop__title {
+  font-size: 11.7px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--app-muted);
+}
+
+.search-pop__close {
+  border: none;
+  background: none;
+  padding: 2px;
+  color: var(--app-faint);
+  font-size: 19.8px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.search-pop__body {
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Rows read as menu items inside the popup, not as separate cards. */
+.search-pop .product-row {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.search-pop .product-row:hover,
+.search-pop .product-row:active {
+  background: var(--app-blue-softer);
+}
+
+.search-pop .empty-state {
+  padding: 22px 12px;
 }
 
 /* --- Chips --------------------------------------------------------------- */
@@ -605,37 +739,140 @@ select.input {
   box-shadow: var(--app-shadow);
 }
 
+/* --- Category rows ------------------------------------------------------- */
+
+/* Same shape as a product row, but only the trailing actions are clickable. */
+.category-row {
+  cursor: default;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+/* --- POS cart cards ------------------------------------------------------
+   Line item from the POS mockup: thumbnail, name, unit price and controls on
+   the left, line total on the right. */
+
+.cart-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--app-surface);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow-soft);
+  padding: 12px;
+}
+
+.cart-card .thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 20px;
+  align-self: flex-start;
+}
+
+.cart-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-card__name {
+  font-size: 14.4px;
+  font-weight: 700;
+  color: var(--app-ink);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cart-card__unit {
+  font-size: 12.6px;
+  color: var(--app-muted);
+  margin: 3px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cart-card__controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.cart-card__remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 12.6px;
+  font-weight: 600;
+  color: var(--app-red);
+  cursor: pointer;
+}
+
+.cart-card__remove ion-icon {
+  font-size: 17px;
+}
+
+.cart-card__total {
+  flex: none;
+  font-size: 15.3px;
+  font-weight: 800;
+  color: var(--app-blue);
+  white-space: nowrap;
+}
+
 /* --- Stepper ------------------------------------------------------------- */
 
 .stepper {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: var(--app-blue-softer);
+  background: #fff;
+  border: 1px solid var(--app-line-strong);
   border-radius: 999px;
-  padding: 3px;
 }
 
 .stepper__btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  width: 38px;
+  height: 34px;
+  border-radius: 999px;
   border: none;
-  background: #fff;
+  background: transparent;
   color: var(--app-blue);
-  font-size: 15.3px;
+  font-size: 16.2px;
   line-height: 1;
   display: grid;
   place-items: center;
   cursor: pointer;
 }
 
+/* The mockup greys out "−" and keeps "+" blue. */
+.stepper__btn:first-child {
+  color: var(--app-muted);
+}
+
 .stepper__value {
-  min-width: 26px;
+  min-width: 38px;
+  padding: 0 6px;
   text-align: center;
   font-weight: 700;
-  font-size: 12.6px;
+  font-size: 13.5px;
+  line-height: 32px;
   color: var(--app-ink);
+  border-left: 1px solid var(--app-line);
+  border-right: 1px solid var(--app-line);
 }
 
 /* --- Totals -------------------------------------------------------------- */

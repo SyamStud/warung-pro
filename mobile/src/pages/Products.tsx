@@ -11,11 +11,11 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonSpinner,
-  useIonAlert,
   useIonToast,
 } from '@ionic/react';
 import { addOutline, closeCircle, pricetagsOutline, searchOutline } from 'ionicons/icons';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { categoriesApi } from '../api/categories';
 import { productsApi, type ProductSort } from '../api/products';
 import ProductDetailModal from '../components/ProductDetailModal';
@@ -42,9 +42,8 @@ const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
 
 /** 5 · Katalog Produk — search, category chips, sort, and the product list. */
 const Products: React.FC = () => {
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [presentToast] = useIonToast();
-  const [presentAlert] = useIonAlert();
   const { overlay } = useOutbox();
 
   const [search, setSearch] = useState('');
@@ -83,30 +82,8 @@ const Products: React.FC = () => {
   // Reflect queued (offline) changes on top of server data.
   const visibleProducts = applyOverlay(products, overlay);
 
-  const createCategory = useMutation({
-    mutationFn: categoriesApi.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: categoryKeys.all }),
-  });
-
   const showToast = (message: string, color: string = 'success') =>
     presentToast({ message, duration: 2000, color, position: 'top' });
-
-  const promptAddCategory = () => {
-    presentAlert({
-      header: 'Kategori baru',
-      inputs: [{ name: 'name', type: 'text', placeholder: 'Nama kategori' }],
-      buttons: [
-        { text: 'Batal', role: 'cancel' },
-        {
-          text: 'Simpan',
-          handler: (data: { name?: string }) => {
-            const name = data.name?.trim();
-            if (name) createCategory.mutate(name);
-          },
-        },
-      ],
-    });
-  };
 
   const listError =
     productsQuery.isError &&
@@ -117,8 +94,6 @@ const Products: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <PageHeader title="Katalog Produk" actions={<SyncStatus />} />
-
         <IonRefresher
           slot="fixed"
           onIonRefresh={async (event) => {
@@ -129,71 +104,89 @@ const Products: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <ConnectionBanner />
+        <div className="sticky-top">
+          <PageHeader
+            title="Katalog Produk"
+            actions={
+              <>
+                <button
+                  type="button"
+                  className="btn btn--icon"
+                  aria-label="Kelola kategori"
+                  onClick={() => navigate('/tabs/categories')}
+                >
+                  <IonIcon icon={pricetagsOutline} />
+                </button>
+                <SyncStatus />
+              </>
+            }
+          />
 
-        <div className="screen">
-          <div className="search">
-            <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama atau SKU"
-              aria-label="Cari produk"
-            />
-            {search !== '' && (
+          <ConnectionBanner />
+
+          <div className="sticky-top__body">
+            <div className="search">
+              <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama atau SKU"
+                aria-label="Cari produk"
+              />
+              {search !== '' && (
+                <button
+                  type="button"
+                  className="search__clear"
+                  aria-label="Hapus pencarian"
+                  onClick={() => setSearch('')}
+                >
+                  <IonIcon icon={closeCircle} />
+                </button>
+              )}
+            </div>
+
+            <div className="chip-row" style={{ marginTop: 12 }}>
               <button
                 type="button"
-                className="search__clear"
-                aria-label="Hapus pencarian"
-                onClick={() => setSearch('')}
+                className={`chip${categoryId === null ? ' chip--active' : ''}`}
+                onClick={() => setCategoryId(null)}
               >
-                <IonIcon icon={closeCircle} />
+                Semua
               </button>
-            )}
-          </div>
-
-          <div className="chip-row" style={{ marginTop: 12 }}>
-            <button
-              type="button"
-              className={`chip${categoryId === null ? ' chip--active' : ''}`}
-              onClick={() => setCategoryId(null)}
-            >
-              Semua
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                className={`chip${categoryId === category.id ? ' chip--active' : ''}`}
-                onClick={() => setCategoryId(category.id)}
-              >
-                {category.name}
-              </button>
-            ))}
-            <button type="button" className="chip" onClick={promptAddCategory}>
-              <IonIcon icon={pricetagsOutline} /> Kategori
-            </button>
-          </div>
-
-          <div className="section-head">
-            <h2 className="section-head__title">
-              {visibleProducts.length > 0 ? `${visibleProducts.length} produk` : 'Produk'}
-            </h2>
-            <select
-              className="input"
-              style={{ minHeight: 42, width: 'auto', fontSize: 11.7, paddingRight: 34 }}
-              value={sort}
-              aria-label="Urutkan produk"
-              onChange={(e) => setSort(e.target.value as ProductSort)}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  className={`chip${categoryId === category.id ? ' chip--active' : ''}`}
+                  onClick={() => setCategoryId(category.id)}
+                >
+                  {category.name}
+                </button>
               ))}
-            </select>
-          </div>
+            </div>
 
+            <div className="section-head" style={{ marginBottom: 0 }}>
+              <h2 className="section-head__title">
+                {visibleProducts.length > 0 ? `${visibleProducts.length} produk` : 'Produk'}
+              </h2>
+              <select
+                className="input"
+                style={{ minHeight: 42, width: 'auto', fontSize: 11.7, paddingRight: 34 }}
+                value={sort}
+                aria-label="Urutkan produk"
+                onChange={(e) => setSort(e.target.value as ProductSort)}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="screen screen--flush">
           {productsQuery.isLoading && (
             <div className="spinner-center">
               <IonSpinner name="crescent" />

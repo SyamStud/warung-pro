@@ -146,6 +146,8 @@ Base URL: `/api/v1`. Endpoint yang sudah tersedia:
 | GET | `/products/lookup?sku=` | Lookup produk dari kode hasil scan |
 | GET | `/categories` | Daftar kategori |
 | POST | `/categories` | Membuat kategori |
+| PATCH | `/categories/{id}` | Mengubah nama kategori |
+| DELETE | `/categories/{id}` | Menghapus kategori (produknya jadi tanpa kategori) |
 | POST | `/transactions` | Simpan transaksi (atomik; mendukung header `Idempotency-Key`) |
 | GET | `/transactions` | Daftar transaksi (`search`, `payment_method`, pagination) |
 | GET | `/transactions/{id}` | Detail transaksi |
@@ -155,15 +157,16 @@ Semua error memakai envelope `{ "error": { "code", "message", "details?" } }`.
 
 ## Layar & Navigasi
 
-Alurnya: **Splash → Login → 4 tab utama**, dengan tiga halaman yang dibuka penuh (tab bar
-tersembunyi):
+Alurnya: **Splash → Login → 4 tab utama**, dengan empat halaman yang dibuka penuh (tab bar
+tersembunyi): **Cek Harga**, **Pembayaran**, **Preview Struk**, dan **Kelola Kategori**.
 
 | Layar | Isi |
 |---|---|
 | **Beranda** | Sapaan, 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru |
 | **Cek Harga** | Bingkai kamera + tombol **Pindai Barcode**, pencarian nama/SKU, kartu hasil + **Tambahkan ke Keranjang** |
-| **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+** |
-| **POS** | Pencarian/scan, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
+| **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+**; tombol kategori di kanan judul membuka **Kelola Kategori** |
+| **Kelola Kategori** | Tambah, ubah nama, dan hapus kategori. Menghapus kategori tidak menghapus produknya — produknya hanya jadi tanpa kategori |
+| **POS** | Pencarian/scan, hasil pencarian tampil sebagai popup di atas keranjang, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
 | **Pembayaran** | Ringkasan pesanan, diskon, metode **Tunai/Non Tunai**, nominal dibayar (+pintasan), kembalian, **Bayar** |
 | **Preview Struk** | Kartu struk bergaya kertas + **Cetak Struk** + teks printer |
 | **Riwayat** | Pencarian nomor, chip metode pembayaran, daftar transaksi (nomor · waktu · total · badge metode), detail & cetak ulang |
@@ -184,7 +187,8 @@ Teks printer pada **Preview Struk** tetap monospace supaya kolom 32/48 karakter 
 
 ## POS (Kasir)
 
-- Tab **POS**: cari produk atau pindai barcode untuk menambah ke keranjang, atur kuantitas, lalu **Lanjut ke Pembayaran**. Keranjang disimpan di provider bersama (memori), jadi produk dari **Cek Harga** ikut masuk.
+- Tab **POS**: cari produk atau pindai barcode untuk menambah ke keranjang, atur kuantitas, lalu **Lanjut ke Pembayaran**. Hasil pencarian muncul sebagai **popup** di atas keranjang (latar digelapkan) sehingga daftar keranjang tidak bergeser; pilih produk untuk memasukkannya, dan kolom cari otomatis dikosongkan lagi. Keranjang disimpan di provider bersama (memori), jadi produk dari **Cek Harga** ikut masuk.
+- **Kelola Kategori**: dibuka dari tombol di kanan judul **Katalog Produk**. Kategori bisa ditambah, diubah namanya, dan dihapus. Menghapus kategori tidak menghapus produk — `category_id` produknya menjadi kosong (`nullOnDelete`).
 - Halaman **Pembayaran**: isi diskon, pilih metode **Tunai** atau **Non Tunai**, isi nominal dibayar (ada pintasan **Uang pas**/20rb/50rb/100rb) dan lihat kembalian. Non tunai dianggap pas (kembalian 0).
 - Semua perhitungan (`subtotal`, `total`, kembalian) dilakukan **backend** dari harga produk di server — bukan dari klien.
 - Item transaksi disimpan sebagai **snapshot** (nama/SKU/harga saat transaksi), sehingga perubahan harga tidak mengubah riwayat.

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   IonContent,
   IonIcon,
@@ -11,10 +11,10 @@ import {
   addCircleOutline,
   cartOutline,
   closeCircle,
-  closeOutline,
   printOutline,
   scanOutline,
   searchOutline,
+  trashOutline,
 } from 'ionicons/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +47,10 @@ const Pos: React.FC = () => {
   const debouncedSearch = useDebouncedValue(search, 300);
   const trimmedSearch = debouncedSearch.trim();
 
+  /** Results float over the cart until dismissed or a product is picked. */
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
+
   const [scanning, setScanning] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [formSku, setFormSku] = useState<string | undefined>(undefined);
@@ -76,9 +80,31 @@ const Pos: React.FC = () => {
     showToast(`${product.name} ditambahkan.`);
   };
 
+  /** Pick a result: add it, then reset the field for the next item. */
+  const selectResult = (product: Product) => {
+    addToCart(product);
+    setSearch('');
+    setResultsOpen(false);
+  };
+
+  // Tap outside the search field to dismiss the popup.
+  useEffect(() => {
+    if (!resultsOpen) return;
+
+    const dismiss = (event: PointerEvent) => {
+      if (!searchWrapRef.current?.contains(event.target as Node)) {
+        setResultsOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [resultsOpen]);
+
   const openNewProduct = (sku?: string) => {
     setFormSku(sku);
     setFormOpen(true);
+    setResultsOpen(false);
   };
 
   const handleScan = async () => {
@@ -142,75 +168,105 @@ const Pos: React.FC = () => {
         <ConnectionBanner />
 
         <div className="screen">
-          <div className="search">
-            <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari produk atau SKU"
-              aria-label="Cari produk untuk keranjang"
-            />
-            {search !== '' && (
-              <button
-                type="button"
-                className="search__clear"
-                aria-label="Hapus pencarian"
-                onClick={() => setSearch('')}
-              >
-                <IonIcon icon={closeCircle} />
-              </button>
+          <div className="search-wrap" ref={searchWrapRef}>
+            <div className="search">
+              <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
+              <input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setResultsOpen(e.target.value.trim() !== '');
+                }}
+                onFocus={() => setResultsOpen(search.trim() !== '')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setResultsOpen(false);
+                }}
+                placeholder="Cari produk atau SKU"
+                aria-label="Cari produk untuk keranjang"
+              />
+              {search !== '' && (
+                <button
+                  type="button"
+                  className="search__clear"
+                  aria-label="Hapus pencarian"
+                  onClick={() => {
+                    setSearch('');
+                    setResultsOpen(false);
+                  }}
+                >
+                  <IonIcon icon={closeCircle} />
+                </button>
+              )}
+            </div>
+
+            {resultsOpen && (
+              <>
+                <div
+                  className="search-pop__backdrop"
+                  aria-hidden="true"
+                  onClick={() => setResultsOpen(false)}
+                />
+
+                <div className="search-pop" role="region" aria-label="Hasil pencarian">
+                  <div className="search-pop__head">
+                    <span className="search-pop__title">Hasil pencarian</span>
+                    <button
+                      type="button"
+                      className="search-pop__close"
+                      aria-label="Tutup hasil pencarian"
+                      onClick={() => setResultsOpen(false)}
+                    >
+                      <IonIcon icon={closeCircle} />
+                    </button>
+                  </div>
+
+                  <div className="search-pop__body">
+                    {resultsQuery.isLoading && (
+                      <div className="spinner-center">
+                        <IonSpinner name="crescent" />
+                      </div>
+                    )}
+
+                    {!resultsQuery.isLoading && results.length === 0 && (
+                      <div className="empty-state">
+                        <p className="empty-state__title">Produk tidak ditemukan</p>
+                        <p className="empty-state__text">
+                          Periksa ejaan, atau tambahkan produk baru.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn--outline"
+                          style={{ marginTop: 14 }}
+                          onClick={() => openNewProduct(trimmedSearch)}
+                        >
+                          <IonIcon icon={addCircleOutline} /> Tambah produk baru
+                        </button>
+                      </div>
+                    )}
+
+                    {results.map((product) => (
+                      <ProductRow
+                        key={product.id}
+                        product={product}
+                        onClick={() => selectResult(product)}
+                        aside={
+                          <span className="product-row__aside">
+                            <span className="product-row__price">
+                              {formatRupiah(product.selling_price)}
+                            </span>
+                            <IonIcon
+                              icon={addCircleOutline}
+                              style={{ color: 'var(--app-blue)', fontSize: 19.8 }}
+                            />
+                          </span>
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </div>
-
-          {trimmedSearch !== '' && (
-            <>
-              <div className="section-head">
-                <h2 className="section-head__title">Hasil pencarian</h2>
-              </div>
-
-              {resultsQuery.isLoading && (
-                <div className="spinner-center">
-                  <IonSpinner name="crescent" />
-                </div>
-              )}
-
-              {!resultsQuery.isLoading && results.length === 0 && (
-                <div className="card empty-state">
-                  <p className="empty-state__title">Produk tidak ditemukan</p>
-                  <p className="empty-state__text">Periksa ejaan, atau tambahkan produk baru.</p>
-                  <button
-                    type="button"
-                    className="btn btn--outline"
-                    style={{ marginTop: 14 }}
-                    onClick={() => openNewProduct(trimmedSearch)}
-                  >
-                    <IonIcon icon={addCircleOutline} /> Tambah produk baru
-                  </button>
-                </div>
-              )}
-
-              <div className="list-stack">
-                {results.map((product) => (
-                  <ProductRow
-                    key={product.id}
-                    product={product}
-                    onClick={() => addToCart(product)}
-                    aside={
-                      <span className="product-row__aside">
-                        <span className="product-row__price">
-                          {formatRupiah(product.selling_price)}
-                        </span>
-                        <IonIcon
-                          icon={addCircleOutline}
-                          style={{ color: 'var(--app-blue)', fontSize: 19.8 }}
-                        />
-                      </span>
-                    }
-                  />
-                ))}
-              </div>
-            </>
-          )}
 
           <div className="section-head">
             <h2 className="section-head__title">Keranjang ({cart.itemCount})</h2>
@@ -232,24 +288,18 @@ const Pos: React.FC = () => {
           ) : (
             <div className="list-stack">
               {cart.lines.map((line) => (
-                <div key={line.product.id} className="product-row">
+                <div key={line.product.id} className="cart-card">
                   <span className="thumb" aria-hidden="true">
                     {line.product.name.trim().charAt(0).toUpperCase() || '?'}
                   </span>
 
-                  <span className="product-row__main">
-                    <span className="product-row__name">{line.product.name}</span>
-                    <span className="product-row__sku">
+                  <div className="cart-card__body">
+                    <p className="cart-card__name">{line.product.name}</p>
+                    <p className="cart-card__unit">
                       {formatRupiah(line.product.selling_price)} / {line.product.unit}
-                    </span>
-                    <span
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        marginTop: 8,
-                      }}
-                    >
+                    </p>
+
+                    <div className="cart-card__controls">
                       <span className="stepper">
                         <button
                           type="button"
@@ -269,21 +319,20 @@ const Pos: React.FC = () => {
                           +
                         </button>
                       </span>
+
                       <button
                         type="button"
-                        className="link"
-                        style={{ color: 'var(--app-red)' }}
+                        className="cart-card__remove"
+                        aria-label={`Hapus ${line.product.name}`}
                         onClick={() => cart.remove(line.product.id)}
                       >
-                        <IonIcon icon={closeOutline} /> Hapus
+                        <IonIcon icon={trashOutline} /> Hapus
                       </button>
-                    </span>
-                  </span>
+                    </div>
+                  </div>
 
-                  <span className="product-row__aside">
-                    <span className="product-row__price">
-                      {formatRupiah(line.product.selling_price * line.quantity)}
-                    </span>
+                  <span className="cart-card__total">
+                    {formatRupiah(line.product.selling_price * line.quantity)}
                   </span>
                 </div>
               ))}
