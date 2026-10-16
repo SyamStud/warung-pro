@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IonBadge, IonButton, IonIcon, IonSpinner, useIonAlert } from '@ionic/react';
+import { IonIcon, IonSpinner, useIonAlert } from '@ionic/react';
 import { cloudUploadOutline } from 'ionicons/icons';
 import ConflictResolutionModal from './ConflictResolutionModal';
 import { useOutbox } from '../hooks/useOutbox';
@@ -25,6 +25,8 @@ const SyncStatus: React.FC = () => {
 
   const total = pendingCount + failedCount + conflictCount;
   if (total === 0 && !isFlushing) return null;
+
+  const hasProblem = conflictCount > 0 || failedCount > 0;
 
   const open = () => {
     presentAlert({
@@ -75,18 +77,35 @@ const SyncStatus: React.FC = () => {
 
   return (
     <>
-      <IonButton onClick={open} aria-label="Status sinkronisasi">
+      <button
+        type="button"
+        className="btn btn--icon"
+        style={{ position: 'relative' }}
+        aria-label={`Status sinkronisasi: ${total} perubahan`}
+        onClick={open}
+      >
         {isFlushing ? (
           <IonSpinner name="dots" />
         ) : (
           <>
-            <IonIcon slot="start" icon={cloudUploadOutline} />
-            <IonBadge color={conflictCount > 0 || failedCount > 0 ? 'danger' : 'warning'}>
+            <IonIcon icon={cloudUploadOutline} />
+            <span
+              className={`badge ${hasProblem ? 'badge--red' : 'badge--amber'}`}
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                padding: '0 5px',
+                fontSize: 10,
+                minWidth: 17,
+                justifyContent: 'center',
+              }}
+            >
               {total}
-            </IonBadge>
+            </span>
           </>
         )}
-      </IonButton>
+      </button>
 
       <ConflictResolutionModal
         isOpen={conflictsOpen}

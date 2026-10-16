@@ -2,6 +2,8 @@
 
 Aplikasi Android untuk mengelola katalog produk, mengecek harga lewat scan barcode, dan mencatat transaksi penjualan sederhana (POS) dengan cetak struk via printer thermal (Bluetooth, USB, atau WiFi).
 
+> **Satu kode per produk.** SKU dan barcode adalah hal yang sama: kode boleh digenerate otomatis, diketik manual, atau diisi otomatis dari hasil scan. Lihat [PLAN.md §7](./PLAN.md).
+
 > **Fokus MVP:** Price Checker + Katalog → POS + Cetak Struk.
 > Baca [PLAN.md](./PLAN.md) untuk rencana lengkap.
 
@@ -36,6 +38,11 @@ Warung/
 - **Phase 8 — Resolusi Konflik Multi-Perangkat (P2):** selesai pada level kode & test (kolom
   `version`, `409 CONFLICT` + baris server terkini, item bentrok diparkir di antrean, dialog
   perbandingan per-field). **Uji dua perangkat masih tertunda.**
+- **Phase 9 — Penyatuan SKU & Redesain UI:** selesai pada level kode & test (satu kolom `sku`
+  menggantikan SKU+barcode, lookup `?sku=`, `GET /products/next-sku`, SKU boleh dipakai ulang
+  setelah diarsipkan, metode pembayaran Tunai/Non Tunai end-to-end, sistem desain biru baru, dan
+  navigasi Splash → Login → 4 tab + halaman Cek Harga/Pembayaran/Struk). **Verifikasi perangkat
+  menyusul.**
 
 Semua fase MVP sudah dikerjakan. Sisa pekerjaan hanya verifikasi perangkat keras/Android yang
 memerlukan SDK dan printer fisik — lihat [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md).
@@ -130,28 +137,53 @@ Base URL: `/api/v1`. Endpoint yang sudah tersedia:
 | POST | `/auth/login` | Login |
 | POST | `/auth/logout` | Logout |
 | GET | `/me` | Profil pengguna |
-| GET | `/products` | Daftar & pencarian produk |
+| GET | `/products` | Daftar & pencarian produk (`search`, `category_id`, `sort`, pagination) |
 | POST | `/products` | Membuat produk (SKU otomatis bila kosong; mendukung header `Idempotency-Key`) |
+| GET | `/products/next-sku` | Saran SKU berikutnya untuk ditampilkan di form |
 | GET | `/products/{id}` | Detail produk |
 | PATCH | `/products/{id}` | Update produk (kirim `version` untuk deteksi konflik; `409` + `force` bila bentrok) |
 | DELETE | `/products/{id}` | Arsipkan produk |
-| GET | `/products/lookup?barcode=` | Lookup barcode |
+| GET | `/products/lookup?sku=` | Lookup produk dari kode hasil scan |
 | GET | `/categories` | Daftar kategori |
 | POST | `/categories` | Membuat kategori |
 | POST | `/transactions` | Simpan transaksi (atomik; mendukung header `Idempotency-Key`) |
-| GET | `/transactions` | Daftar transaksi (pagination) |
+| GET | `/transactions` | Daftar transaksi (`search`, `payment_method`, pagination) |
 | GET | `/transactions/{id}` | Detail transaksi |
 | GET | `/transactions/{id}/receipt` | Data untuk cetak struk |
 
 Semua error memakai envelope `{ "error": { "code", "message", "details?" } }`.
 
+## Layar & Navigasi
+
+Alurnya: **Splash → Login → 4 tab utama**, dengan tiga halaman yang dibuka penuh (tab bar
+tersembunyi):
+
+| Layar | Isi |
+|---|---|
+| **Beranda** | Sapaan, 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru |
+| **Cek Harga** | Bingkai kamera + tombol **Pindai Barcode**, pencarian nama/SKU, kartu hasil + **Tambahkan ke Keranjang** |
+| **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+** |
+| **POS** | Pencarian/scan, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
+| **Pembayaran** | Ringkasan pesanan, diskon, metode **Tunai/Non Tunai**, nominal dibayar (+pintasan), kembalian, **Bayar** |
+| **Preview Struk** | Kartu struk bergaya kertas + **Cetak Struk** + teks printer |
+| **Riwayat** | Pencarian nomor, chip metode pembayaran, daftar transaksi berbadge, detail & cetak ulang |
+
+Sistem desainnya biru `#2563EB` di atas latar `#F4F6FA`: kartu putih bersudut bulat, tombol utama
+biru selebar penuh, bar pencarian berbentuk pil, chip filter, dan badge status
+(`mobile/src/theme/variables.css` + `mobile/src/theme/app.css`).
+
+> Form produk memakai **satu kolom “SKU / Barcode”** dengan tombol generate (saran dari server)
+> dan tombol scan. Foto produk tidak dipakai di versi ini.
+
 ## POS (Kasir)
 
-- Tab **Kasir**: cari produk atau pindai barcode untuk menambah ke keranjang, atur kuantitas, isi diskon & pembayaran, lalu **Bayar**.
+- Tab **POS**: cari produk atau pindai barcode untuk menambah ke keranjang, atur kuantitas, lalu **Lanjut ke Pembayaran**. Keranjang disimpan di provider bersama (memori), jadi produk dari **Cek Harga** ikut masuk.
+- Halaman **Pembayaran**: isi diskon, pilih metode **Tunai** atau **Non Tunai**, isi nominal dibayar (ada pintasan **Uang pas**/20rb/50rb/100rb) dan lihat kembalian. Non tunai dianggap pas (kembalian 0).
 - Semua perhitungan (`subtotal`, `total`, kembalian) dilakukan **backend** dari harga produk di server — bukan dari klien.
-- Item transaksi disimpan sebagai **snapshot** (nama/harga saat transaksi), sehingga perubahan harga tidak mengubah riwayat.
+- Item transaksi disimpan sebagai **snapshot** (nama/SKU/harga saat transaksi), sehingga perubahan harga tidak mengubah riwayat.
 - Checkout memakai `Idempotency-Key` (satu kunci per isi keranjang) agar percobaan ulang tidak membuat transaksi ganda.
-- Tab **Riwayat**: daftar transaksi (pagination, pull-to-refresh) dan detail item/pembayaran.
+- Setelah berhasil, aplikasi membuka **Preview Struk** dengan tombol cetak.
+- Tab **Riwayat**: daftar transaksi (pagination, pull-to-refresh, pencarian nomor, filter metode) dan detail item/pembayaran.
 - Checkout memerlukan koneksi (server-authoritative). Antrean transaksi offline termasuk P2.
 
 ## Cetak Struk (Printer Thermal)
@@ -160,14 +192,14 @@ Didukung **Bluetooth SPP**, **USB (OTG)**, dan **WiFi/LAN (TCP 9100)** lewat plu
 `@devlas/capacitor-thermal-printer` (mengirim bytes ESC/POS mentah). Pencetakan hanya aktif di
 aplikasi Android; di browser struk ditampilkan sebagai **pratinjau** teks.
 
-- Buka **ikon printer** di tab **Riwayat** (atau di tab **Kasir**).
+- Buka **ikon printer** di tab **Riwayat** (atau di tab **POS**).
 - Pilih **lebar kertas** (58 mm = 32 kolom, 80 mm = 48 kolom), isi nama toko/alamat/footer.
 - Pilih **jenis koneksi**:
   - **Bluetooth**: pasangkan printer di pengaturan Android dulu, lalu "Cari perangkat" dan pilih printer.
   - **USB (OTG)**: sambungkan printer, lalu "Cari perangkat". Izin USB diminta otomatis.
   - **WiFi/LAN**: isi alamat IP printer dan port (default `9100`).
 - Tekan **Cetak uji** untuk memastikan printer bekerja, lalu **Simpan** sebagai printer default.
-- Cetak struk dari **detail transaksi** (Riwayat) atau langsung dari dialog sukses setelah **Bayar** (Kasir).
+- Cetak struk dari **Preview Struk** (setelah **Bayar**) atau dari **detail transaksi** di Riwayat.
 - Cetak ulang tidak mengubah transaksi — struk selalu dirender dari snapshot transaksi di server.
 
 Struk dibuat oleh encoder lokal (`mobile/src/lib/receipt`) yang memisahkan model layout dari

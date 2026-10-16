@@ -3,9 +3,6 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
-  IonItem,
-  IonLabel,
-  IonList,
   IonModal,
   IonTitle,
   IonToolbar,
@@ -34,9 +31,9 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
   onKeepMine,
 }) => (
   <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-    <IonHeader>
+    <IonHeader className="app-header">
       <IonToolbar>
-        <IonTitle>Perubahan Bentrok</IonTitle>
+        <IonTitle className="app-title-bar">Perubahan Bentrok</IonTitle>
         <IonButtons slot="end">
           <IonButton onClick={onDismiss}>Tutup</IonButton>
         </IonButtons>
@@ -44,48 +41,61 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
     </IonHeader>
 
     <IonContent>
-      <div className="ion-padding">
-        Produk berikut diubah di perangkat lain setelah Anda membuka formulir.
-        Pilih versi mana yang ingin disimpan.
+      <div className="screen">
+        <p className="note note--warn">
+          Produk berikut diubah di perangkat lain setelah Anda membuka formulir. Pilih versi mana
+          yang ingin disimpan.
+        </p>
+
+        {conflicts.map((conflict) => (
+          <div key={conflict.itemId} className="card" style={{ marginBottom: 12 }}>
+            <div className="card__head" style={{ marginBottom: 6 }}>
+              <h2 className="card__title">{conflict.title}</h2>
+              <span className="badge badge--grey">#{conflict.productId}</span>
+            </div>
+
+            {conflict.fields.length === 0 ? (
+              <p className="field__hint">Nilai sudah sama dengan server. Tidak ada yang perlu dipilih.</p>
+            ) : (
+              conflict.fields.map((field) => (
+                <div key={field.key} style={{ marginBottom: 10 }}>
+                  <p className="field__label" style={{ marginBottom: 4 }}>
+                    {field.label}
+                  </p>
+                  <div className="field__row" style={{ gap: 8 }}>
+                    <span className="badge badge--blue" style={{ flex: 1, justifyContent: 'center' }}>
+                      Saya: {field.mine}
+                    </span>
+                    <span
+                      className="badge badge--grey"
+                      style={{ flex: 1, justifyContent: 'center' }}
+                    >
+                      Server: {field.server}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+
+            <div className="btn-row" style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                className="btn btn--outline btn--sm"
+                onClick={() => onKeepServer(conflict.itemId)}
+              >
+                Pakai versi server
+              </button>
+              <button
+                type="button"
+                className="btn btn--quiet btn--sm"
+                onClick={() => onKeepMine(conflict.itemId)}
+              >
+                Simpan milik saya
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
-
-      {conflicts.map((conflict) => (
-        <IonList key={conflict.itemId}>
-          <IonItem lines="none">
-            <IonLabel>
-              <h2>{conflict.title}</h2>
-              <p>Produk #{conflict.productId}</p>
-            </IonLabel>
-          </IonItem>
-
-          {conflict.fields.length === 0 ? (
-            <IonItem>
-              <IonLabel>
-                <p>Nilai sudah sama dengan server. Tidak ada yang perlu dipilih.</p>
-              </IonLabel>
-            </IonItem>
-          ) : (
-            conflict.fields.map((field) => (
-              <IonItem key={field.key}>
-                <IonLabel>
-                  <h3>{field.label}</h3>
-                  <p>Saya: {field.mine}</p>
-                  <p>Server: {field.server}</p>
-                </IonLabel>
-              </IonItem>
-            ))
-          )}
-
-          <IonItem lines="none">
-            <IonButton size="small" fill="outline" onClick={() => onKeepServer(conflict.itemId)}>
-              Pakai versi server
-            </IonButton>
-            <IonButton size="small" color="warning" onClick={() => onKeepMine(conflict.itemId)}>
-              Simpan milik saya
-            </IonButton>
-          </IonItem>
-        </IonList>
-      ))}
     </IonContent>
   </IonModal>
 );

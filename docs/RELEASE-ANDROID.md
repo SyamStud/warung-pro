@@ -112,18 +112,24 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 
 ### Katalog & Price Checker
-- [ ] Daftar/login (token tersimpan setelah app ditutup).
-- [ ] Tambah produk (dengan & tanpa barcode), edit, arsipkan.
-- [ ] Pindai barcode → harga benar; barcode tak dikenal → tawaran tambah produk.
+- [ ] Splash → Login; token tersimpan setelah app ditutup.
+- [ ] Beranda: sapaan, kartu aksi cepat, produk terbaru.
+- [ ] Tambah produk (SKU digenerate, diketik manual, dan diisi dari scan), edit, arsipkan.
+- [ ] SKU yang diarsipkan bisa dipakai ulang untuk produk baru.
+- [ ] Pindai barcode → harga benar; kode tak dikenal → tawaran tambah produk (SKU terisi).
+- [ ] Cari di **Cek Harga** dan **Katalog Produk**; urutkan katalog (Terbaru/Nama/Harga).
+- [ ] Halaman Cek Harga / Pembayaran / Struk tidak menampilkan tab bar.
+- [ ] Bingkai kamera hanya penanda visual: menekan **Pindai Barcode** membuka UI kamera native.
 - [ ] Perubahan dari perangkat lain terlihat setelah refresh.
 - [ ] Perangkat lain (akun berbeda) tidak melihat data pengguna ini.
 
 ### POS
-- [ ] Keranjang, ubah kuantitas, hapus item.
+- [ ] Keranjang, ubah kuantitas, hapus item; tambah item dari Cek Harga.
 - [ ] Diskon + pembayaran; total/kembalian sesuai hitungan server.
+- [ ] Metode **Tunai** dan **Non Tunai** tersimpan; filter Riwayat bekerja.
 - [ ] Bayar di bawah total ditolak.
 - [ ] Klik **Bayar** dua kali / retry jaringan → hanya **satu** transaksi.
-- [ ] Riwayat & detail menampilkan snapshot harga saat transaksi.
+- [ ] Riwayat & detail menampilkan snapshot SKU/harga saat transaksi.
 
 ### Offline
 - [ ] Mode pesawat → tambah produk → tersimpan "Menunggu".

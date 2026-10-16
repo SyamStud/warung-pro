@@ -1,2 +1,94 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/* ==========================================================================
+   Design tokens — "Warung" blue.
+   Everything visual is expressed here so screens only compose classes.
+   ========================================================================== */
+
+:root {
+  /* Brand */
+  --app-blue: #2563eb;
+  --app-blue-dark: #1d4ed8;
+  --app-blue-soft: #eaf1ff;
+  --app-blue-softer: #f5f8ff;
+
+  /* Surfaces */
+  --app-bg: #f4f6fa;
+  --app-surface: #ffffff;
+  --app-line: #e9edf5;
+  --app-line-strong: #dde3ee;
+
+  /* Text */
+  --app-ink: #101828;
+  --app-muted: #6b7688;
+  --app-faint: #9aa4b5;
+
+  /* Feedback */
+  --app-green: #16a34a;
+  --app-green-soft: #e7f8ee;
+  --app-amber: #b45309;
+  --app-amber-soft: #fdf3e3;
+  --app-red: #dc2626;
+  --app-red-soft: #fdeaea;
+
+  /* Shape */
+  --app-radius-sm: 10px;
+  --app-radius: 14px;
+  --app-radius-lg: 20px;
+  --app-radius-xl: 26px;
+  --app-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 26px rgba(16, 24, 40, 0.06);
+  --app-shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.04);
+
+  /* Ionic integration */
+  --ion-font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  --ion-background-color: var(--app-bg);
+  --ion-text-color: var(--app-ink);
+
+  --ion-color-primary: #2563eb;
+  --ion-color-primary-rgb: 37, 99, 235;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #2157cf;
+  --ion-color-primary-tint: #3b73ed;
+
+  --ion-color-secondary: #1d4ed8;
+  --ion-color-secondary-rgb: 29, 78, 216;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-shade: #1a45be;
+  --ion-color-secondary-tint: #3460dc;
+
+  --ion-color-success: #16a34a;
+  --ion-color-success-rgb: 22, 163, 74;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-shade: #138f41;
+  --ion-color-success-tint: #2dac5c;
+
+  --ion-color-danger: #dc2626;
+  --ion-color-danger-rgb: 220, 38, 38;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-shade: #c22121;
+  --ion-color-danger-tint: #e03c3c;
+
+  --ion-color-medium: #6b7688;
+  --ion-color-medium-rgb: 107, 118, 136;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-shade: #5e6878;
+  --ion-color-medium-tint: #7a8494;
+
+  --ion-toolbar-background: var(--app-bg);
+  --ion-toolbar-color: var(--app-ink);
+  --ion-item-background: var(--app-surface);
+  --ion-tab-bar-background: var(--app-surface);
+  --ion-tab-bar-color: var(--app-faint);
+  --ion-tab-bar-color-selected: var(--app-blue);
+  --ion-tab-bar-border-color: var(--app-line);
+}
+
+/* The mockup is a light, airy design; keep it light on every device. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ion-background-color: var(--app-bg);
+    --ion-text-color: var(--app-ink);
+    --ion-toolbar-background: var(--app-bg);
+    --ion-item-background: var(--app-surface);
+    --ion-tab-bar-background: var(--app-surface);
+  }
+}

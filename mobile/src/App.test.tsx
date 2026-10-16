@@ -6,8 +6,8 @@ import { AuthProvider } from './auth/AuthProvider';
 import { queryClient } from './lib/queryClient';
 
 // With no stored token, AuthProvider settles unauthenticated and the app
-// should route straight to the login screen.
-test('renders the login screen when unauthenticated', async () => {
+// opens on the splash screen (screen 1 of the mockup flow).
+test('renders the splash screen when unauthenticated', async () => {
   render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -16,5 +16,6 @@ test('renders the login screen when unauthenticated', async () => {
     </QueryClientProvider>,
   );
 
-  expect((await screen.findAllByText('Masuk')).length).toBeGreaterThan(0);
+  expect((await screen.findAllByText('Mulai')).length).toBeGreaterThan(0);
+  expect(screen.getByText('Cek harga & kasir untuk warung kamu')).toBeTruthy();
 });

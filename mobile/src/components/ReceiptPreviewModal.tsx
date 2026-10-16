@@ -4,7 +4,6 @@ import {
   IonContent,
   IonHeader,
   IonModal,
-  IonNote,
   IonTitle,
   IonToolbar,
 } from '@ionic/react';
@@ -24,33 +23,22 @@ const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
   onDismiss,
 }) => (
   <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-    <IonHeader>
+    <IonHeader className="app-header">
       <IonToolbar>
         <IonButtons slot="start">
           <IonButton onClick={onDismiss}>Tutup</IonButton>
         </IonButtons>
-        <IonTitle>{title}</IonTitle>
+        <IonTitle className="app-title-bar">{title}</IonTitle>
       </IonToolbar>
     </IonHeader>
 
-    <IonContent className="ion-padding">
-      <IonNote color="medium" className="ion-display-block ion-padding-bottom">
-        Pratinjau struk (lebar kertas mengikuti pengaturan printer).
-      </IonNote>
-      <pre
-        style={{
-          fontFamily: 'monospace',
-          fontSize: 12,
-          lineHeight: 1.25,
-          whiteSpace: 'pre',
-          overflowX: 'auto',
-          background: 'var(--ion-color-light)',
-          padding: 12,
-          borderRadius: 8,
-        }}
-      >
-        {text}
-      </pre>
+    <IonContent>
+      <div className="screen">
+        <p className="field__hint" style={{ marginBottom: 12 }}>
+          Teks ini dikirim apa adanya ke printer (lebar kertas mengikuti pengaturan).
+        </p>
+        <pre className="receipt-card__mono">{text}</pre>
+      </div>
     </IonContent>
   </IonModal>
 );

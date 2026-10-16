@@ -23,7 +23,7 @@ Backend/cloud menjadi **sumber data utama** agar katalog dan riwayat transaksi k
 |---|---|---|
 | G1 | Pencatatan & pembaruan harga cepat | Tambah/edit produk < 30 detik |
 | G2 | Pengecekan harga cepat via kamera | Scan → harga tampil < 2 detik (jaringan normal) |
-| G3 | Katalog dapat dicari (nama/SKU/barcode) | Semua mode pencarian mengembalikan hasil benar |
+| G3 | Katalog dapat dicari (nama/SKU) | Semua mode pencarian mengembalikan hasil benar |
 | G4 | Kasir sederhana + cetak struk | Transaksi tersimpan & struk tercetak |
 | G5 | Data konsisten lintas perangkat | Perubahan produk terlihat di perangkat lain setelah refresh |
 
@@ -32,7 +32,7 @@ Backend/cloud menjadi **sumber data utama** agar katalog dan riwayat transaksi k
 - **Price Checker dulu, POS kemudian.** Jangan menyentuh fitur retail kompleks sebelum inti stabil.
 - **Server-authoritative.** Harga, total, dan perhitungan lain dihitung backend — aplikasi tidak dipercaya.
 - **Tanpa manajemen stok.** Tidak ada tabel/flow stok, mutasi, atau opname di MVP.
-- **Produk boleh punya SKU saja, barcode saja, atau keduanya.**
+- **SKU dan barcode adalah satu hal yang sama.** Produk hanya punya satu kolom kode (`sku`): boleh digenerate otomatis, diketik manual, atau diisi dari hasil scan. Lihat §7.
 - **Riwayat bersifat historis.** Perubahan harga tidak mengubah transaksi lama (snapshot).
 - **Bertahap.** Tiap phase punya deliverable yang bisa dipakai/diuji sendiri.
 
@@ -79,7 +79,7 @@ Manajemen stok, stock opname, supplier/PO, multi-cabang, payment gateway, pajak/
                                  │ HTTPS / JSON
                                  ▼
 ┌──────────────────────────── Laravel REST API ────────────────────────┐
-│  Auth (Sanctum) · Products · Categories · Barcode Lookup            │
+│  Auth (Sanctum) · Products · Categories · Product Lookup (SKU)       │
 │  SKU Generator · Transactions (idempotent) · Receipt Data           │
 └───────────────────────────────┬─────────────────────────────────────┘
                                  ▼
@@ -117,19 +117,19 @@ Legenda: **P0** = wajib untuk inti (katalog + price checker), **P1** = POS + cet
 - [x] Daftar produk (pagination).
 - [x] Tambah / lihat detail / edit produk.
 - [x] Arsipkan produk (soft delete).
-- [x] Pencarian by **nama**, **SKU**, **barcode**.
-- [x] Input barcode via kamera atau manual.
-- [x] Generate SKU otomatis (backend).
-- [x] Validasi SKU & barcode duplikat.
+- [x] Pencarian by **nama** dan **SKU**.
+- [x] Input SKU via kamera (scan) atau manual.
+- [x] Generate SKU otomatis (backend, `GET /products/next-sku`).
+- [x] Validasi SKU duplikat (unik antar produk aktif; boleh dipakai ulang setelah diarsipkan).
 - [x] Kategori produk (sederhana: list + create).
 
 ### C. Price Checker (P0)
 
 - [x] Scan barcode via kamera.
-- [x] Tampilkan produk + harga setelah barcode ditemukan.
-- [x] Tampilkan harga jual, SKU, dan barcode dengan jelas.
-- [x] Pencarian manual (nama/SKU/barcode).
-- [x] Status "barcode tidak ditemukan" + aksi tambah produk.
+- [x] Tampilkan produk + harga setelah kode ditemukan.
+- [x] Tampilkan harga jual dan SKU dengan jelas.
+- [x] Pencarian manual (nama/SKU).
+- [x] Status "kode tidak ditemukan" + aksi tambah produk (SKU terisi otomatis).
 - [x] Penanganan izin kamera & kegagalan scanner.
 
 ### D. Cloud Sync (P0)
@@ -182,30 +182,58 @@ SQLite cache persisten · pencarian offline · antrean transaksi offline · retr
 
 ## 4. Layar Aplikasi
 
-Navigasi utama: **4 tab**. Semua tab dapat diakses setelah login.
+Alur: **Splash → Login → 4 tab utama → halaman tambahan (pushed, tanpa tab bar)**.
 
-### 4.1 Price Checker (tab default)
+Tab utama: **Beranda · Produk · POS · Riwayat**. Halaman yang dibuka dari tab (Cek Harga, Pembayaran, Preview Struk) tampil penuh sebagai halaman yang di-push sehingga tab bar tersembunyi.
+
+Sistem desain: biru `#2563EB`, latar `#F4F6FA`, kartu putih bersudut bulat, tombol utama biru selebar penuh, bar pencarian berbentuk pil, chip untuk filter, dan badge untuk status.
+
+### 4.1 Splash
+
+Layar pembuka bertema biru dengan logo warung (SVG inline) dan tombol **Mulai** → Login. Ditampilkan saat belum ada sesi.
+
+### 4.2 Login
+
+Email + kata sandi, tombol tampilkan/sembunyikan sandi, tombol **Masuk** biru. Tautan **Lupa password?** dan **Daftar** ditampilkan sebagai informasi (belum ada endpoint reset/registrasi di MVP).
+
+### 4.3 Beranda
+
+Sapaan pengguna, **4 kartu aksi cepat** (Cek Harga · Tambah Produk · Kasir · Riwayat), dan daftar **Produk terbaru** dengan tautan *Lihat semua*.
+
+### 4.4 Cek Harga (pushed)
 
 | Elemen | Perilaku |
 |---|---|
-| Tombol **Scan** | Buka kamera → dapatkan barcode → panggil `lookup` |
-| Search bar | Cari nama/SKU/barcode, debounce 300 ms |
-| Hasil pencarian | List produk (nama, SKU, harga) |
-| Detail produk | Nama, harga besar, SKU, barcode, kategori, unit |
-| State "tidak ditemukan" | Pesan jelas + tombol **Tambah produk** (barcode terisi otomatis) |
+| View finder | Bingkai kamera bergaya mockup; mengetuk **Pindai Barcode** membuka kamera native lalu `lookup` |
+| Search bar | Cari nama/SKU, debounce 300 ms |
+| Hasil pencarian | Daftar produk (nama, SKU, harga) |
+| Kartu hasil | Nama, harga besar, SKU, satuan, tombol **Tambahkan ke Keranjang** |
+| State "tidak ditemukan" | Pesan jelas + tombol **Tambah produk** (SKU terisi otomatis) |
 | Error state | Izin kamera ditolak / scanner gagal / jaringan putus |
 
-### 4.2 Products
+> Catatan: `@capacitor-mlkit/barcode-scanning` membuka UI kamera native sendiri, jadi bingkai pada layar ini adalah penanda visual, bukan pratinjau kamera langsung.
 
-Daftar produk + pencarian + filter kategori + tombol tambah. Form tambah/edit dengan pilihan **scan barcode** atau input manual, **SKU otomatis** atau manual, serta tombol arsip.
+### 4.5 Katalog Produk
 
-### 4.3 POS
+Bar pencarian pil, chip kategori (+ tambah kategori), pemilih urutan (Terbaru · Nama A-Z · Harga terendah · Harga tertinggi), daftar produk (thumbnail inisial, nama, SKU, harga biru), tombol **+** untuk menambah produk, dan modal detail (edit/arsip).
 
-Scanner & pencarian, daftar keranjang, kontrol kuantitas, ringkasan subtotal/total, form pembayaran, info kembalian, tombol simpan transaksi, tombol cetak struk.
+Form tambah/edit punya **satu kolom “SKU / Barcode”** dengan tombol **generate** (backend) dan tombol **scan**. Foto produk tidak diperlukan.
 
-### 4.4 History
+### 4.6 POS
 
-Daftar transaksi (nomor, tanggal, total), detail transaksi (item + pembayaran), tombol cetak ulang.
+Pencarian & scan, daftar keranjang dengan kontrol kuantitas, ringkasan subtotal, dan tombol **Lanjut ke Pembayaran**. Keranjang disimpan di provider bersama (memori), sehingga bisa diisi dari Cek Harga.
+
+### 4.7 Pembayaran (pushed)
+
+Ringkasan pesanan, input **diskon**, pemilih **metode pembayaran (Tunai / Non Tunai)**, input **dibayar** dengan pintasan nominal, dan tampilan **kembalian**. Untuk Non Tunai, nominal dianggap pas (tanpa kembalian). Tombol **Bayar** menyimpan transaksi ke server (idempotent) lalu membuka Preview Struk.
+
+### 4.8 Preview Struk (pushed)
+
+Kartu struk bergaya kertas (nama toko, alamat, tanggal, nomor, item, subtotal, diskon, total, baris metode pembayaran, kembalian, footer), tombol **Cetak Struk**, dan tampilan sekunder **teks printer** (monospace) sesuai lebar kertas.
+
+### 4.9 Riwayat Transaksi
+
+Pencarian nomor transaksi, chip metode pembayaran (Semua/Tunai/Non Tunai), daftar transaksi dengan badge status & metode, modal detail item + pembayaran, dan tombol cetak ulang.
 
 ---
 
@@ -240,8 +268,7 @@ Constraint: `UNIQUE (user_id, name)`.
 | user_id | BIGINT FK → users | Pemilik |
 | category_id | BIGINT FK → categories, NULL | Kategori |
 | name | VARCHAR | Nama produk |
-| sku | VARCHAR | SKU internal |
-| barcode | VARCHAR, NULL | Barcode produk |
+| sku | VARCHAR | Kode produk (SKU = barcode) |
 | unit | VARCHAR | Satuan (pcs, kg, dst.) |
 | selling_price | BIGINT | Harga jual (rupiah, integer) |
 | notes | TEXT, NULL | Catatan |
@@ -253,21 +280,22 @@ Constraint: `UNIQUE (user_id, name)`.
 
 **Ketentuan & constraint:**
 
-- `UNIQUE (user_id, sku)`.
-- `UNIQUE (user_id, barcode)` untuk barcode **non-NULL** (partial unique index di PostgreSQL).
-- Produk tanpa barcode tetap valid.
+- `sku` wajib (diisi pengguna atau digenerate backend).
+- **Unique `(user_id, sku)` hanya antar produk aktif** (partial unique index `WHERE deleted_at IS NULL`), sehingga kode produk yang sudah diarsipkan boleh dipakai ulang.
 - `selling_price >= 0` (check constraint).
 - `version` naik 1 setiap update dan dipakai untuk optimistic concurrency (§9.2).
 - Produk yang sudah dipakai transaksi **diarsipkan**, bukan dihapus permanen.
-- Index: `name`, `sku`, `barcode`.
+- Index: `name`, `sku`.
 
 Contoh partial unique index:
 
 ```sql
-CREATE UNIQUE INDEX products_user_barcode_unique
-  ON products (user_id, barcode)
-  WHERE barcode IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX products_user_id_sku_unique
+  ON products (user_id, sku)
+  WHERE deleted_at IS NULL;
 ```
+
+> **Migrasi `merge_barcode_into_sku`:** kolom `barcode` lama dihapus. Untuk data yang sudah ada, nilai `barcode` **menang** menjadi `sku` baru bila terisi; kalau tidak, `sku` lama dipertahankan.
 
 ### 5.4 `transactions`
 
@@ -282,10 +310,11 @@ CREATE UNIQUE INDEX products_user_barcode_unique
 | total | BIGINT | Total bayar |
 | paid_amount | BIGINT | Nominal dibayar |
 | change_amount | BIGINT | Kembalian |
+| payment_method | VARCHAR(20) | `cash` / `non_cash` (default `cash`) |
 | idempotency_key | VARCHAR, NULL | Kunci anti-duplikat |
 | created_at / updated_at | TIMESTAMP | |
 
-Constraint: `UNIQUE (user_id, idempotency_key)` untuk key non-NULL. Index `(user_id, created_at DESC)`.
+Constraint: `UNIQUE (user_id, idempotency_key)` untuk key non-NULL. Index `(user_id, created_at DESC)`. PostgreSQL: `CHECK (payment_method IN ('cash', 'non_cash'))`.
 
 ### 5.5 `transaction_items`
 
@@ -295,8 +324,7 @@ Constraint: `UNIQUE (user_id, idempotency_key)` untuk key non-NULL. Index `(user
 | transaction_id | BIGINT FK → transactions (cascade) | Relasi |
 | product_id | BIGINT FK → products, NULL | Referensi (boleh null bila produk terhapus) |
 | product_name | VARCHAR | Snapshot nama |
-| sku | VARCHAR, NULL | Snapshot SKU |
-| barcode | VARCHAR, NULL | Snapshot barcode |
+| sku | VARCHAR, NULL | Snapshot SKU (kode produk) |
 | unit_price | BIGINT | Harga saat transaksi |
 | quantity | INTEGER | Kuantitas (integer > 0) |
 | line_total | BIGINT | `unit_price * quantity` |
@@ -335,12 +363,15 @@ Base URL: `/api/v1`. Semua response JSON. Semua endpoint privat butuh `Authoriza
 
 | Method | Endpoint | Fungsi |
 |---|---|---|
-| GET | `/products` | Daftar & pencarian (`search`, `category_id`, `page`, `per_page`) |
+| GET | `/products` | Daftar & pencarian (`search`, `category_id`, `sort`, `page`, `per_page`) |
 | POST | `/products` | Buat produk |
+| GET | `/products/next-sku` | Saran SKU berikutnya (belum dipesan sampai disimpan) |
 | GET | `/products/{id}` | Detail produk |
 | PATCH | `/products/{id}` | Update produk |
 | DELETE | `/products/{id}` | Arsipkan (soft delete) |
-| GET | `/products/lookup?barcode={code}` | Lookup barcode |
+| GET | `/products/lookup?sku={code}` | Lookup produk berdasarkan SKU (= kode hasil scan) |
+
+Nilai `sort`: `name`, `price_asc`, `price_desc` (selain itu → urut `id` terbaru).
 
 ### 6.3 Categories
 
@@ -354,7 +385,7 @@ Base URL: `/api/v1`. Semua response JSON. Semua endpoint privat butuh `Authoriza
 | Method | Endpoint | Fungsi |
 |---|---|---|
 | POST | `/transactions` | Simpan transaksi (idempotent) |
-| GET | `/transactions` | Daftar transaksi (pagination) |
+| GET | `/transactions` | Daftar transaksi (`search`, `payment_method`, pagination) |
 | GET | `/transactions/{id}` | Detail transaksi |
 | GET | `/transactions/{id}/receipt` | Data untuk cetak struk |
 
@@ -368,8 +399,7 @@ Content-Type: application/json
 
 {
   "name": "Air Mineral 600ml",
-  "sku": null,                 // null → backend generate otomatis
-  "barcode": "8991234567890",  // boleh null
+  "sku": null,                 // null/kosong → backend generate otomatis (PRD-000042)
   "unit": "pcs",
   "selling_price": 4000,
   "category_id": 2,
@@ -384,7 +414,6 @@ Content-Type: application/json
     "id": 42,
     "name": "Air Mineral 600ml",
     "sku": "PRD-000042",
-    "barcode": "8991234567890",
     "unit": "pcs",
     "selling_price": 4000,
     "category_id": 2,
@@ -392,6 +421,14 @@ Content-Type: application/json
   }
 }
 ```
+
+**Lookup hasil scan**
+
+```http
+GET /api/v1/products/lookup?sku=8991234567890
+```
+
+`200 OK` bila ditemukan; `404 NOT_FOUND` dengan pesan `Produk dengan SKU tersebut tidak ditemukan.` bila belum terdaftar.
 
 **Create transaction (idempotent)**
 
@@ -475,7 +512,7 @@ pengguna memilih. Kirim `"force": true` untuk menimpa dengan sengaja (§9.2).
 }
 ```
 
-Kode error: `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT` (duplikat SKU/barcode **atau** versi baris yang sudah bergerak), `RATE_LIMITED`, `SERVER_ERROR`.
+Kode error: `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT` (duplikat SKU **atau** versi baris yang sudah bergerak), `RATE_LIMITED`, `SERVER_ERROR`.
 
 ### 6.6 API Rules
 
@@ -489,20 +526,30 @@ Kode error: `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_ERROR`, `CO
 
 ---
 
-## 7. Aturan SKU & Barcode
+## 7. Aturan SKU (SKU = Barcode)
 
-SKU internal dan barcode **dipisahkan**.
+SKU dan barcode diperlakukan sebagai **satu kolom kode yang sama** (`products.sku`). Tidak ada lagi kolom `barcode` terpisah.
 
-### Mode 1 — Scan Barcode
+Konsekuensinya:
 
-Scan → `GET /products/lookup?barcode=...`:
+- Kode hasil scan barcode langsung menjadi SKU produk.
+- Lookup hasil scan memakai `GET /products/lookup?sku=...`.
+- Pencarian katalog mencocokkan **nama** dan **sku**.
+- SKU boleh **dipakai ulang** setelah produknya diarsipkan (unique hanya antar produk aktif).
+
+### Cara 1 — Scan
+
+Scan → `GET /products/lookup?sku=...`:
 
 - **Ditemukan** → tampilkan produk + harga.
-- **Tidak ditemukan** → tampilkan opsi tambah produk; barcode terisi otomatis di form; SKU tetap bisa otomatis.
+- **Tidak ditemukan** → tawarkan tambah produk; kolom SKU di form terisi otomatis dengan kode hasil scan.
 
-### Mode 2 — Auto-Generated SKU
+### Cara 2 — Auto-Generated SKU
 
 Format: `PRD-{6 digit urut}` → `PRD-000042`.
+
+- `GET /products/next-sku` mengembalikan **saran** berikutnya untuk ditampilkan di form; nilai belum dipesan sampai produk disimpan.
+- Penyimpanan tetap memakai generator yang aman terhadap request bersamaan.
 
 **Jangan** basis jumlah produk (race condition). Gunakan salah satu:
 
@@ -512,9 +559,9 @@ Format: `PRD-{6 digit urut}` → `PRD-000042`.
 
 Retry otomatis bila unique constraint gagal karena race.
 
-### Mode 3 — Manual Input
+### Cara 3 — Manual Input
 
-Pengguna memasukkan SKU/barcode manual. Backend memvalidasi duplikasi sebelum menyimpan dan mengembalikan `409 CONFLICT` bila bentrok.
+Pengguna mengetik kode sendiri. Backend memvalidasi duplikasi antar produk aktif sebelum menyimpan dan mengembalikan `422 VALIDATION_ERROR` pada field `sku` bila bentrok. SKU milik produk yang sudah diarsipkan tidak menghalangi.
 
 ### Nomor Transaksi
 
@@ -538,6 +585,9 @@ Status transaksi: `paid` (lunas), `void` (dibatalkan — pasca-MVP jika dibutuhk
 8. Riwayat historis: perubahan harga produk tidak mengubah transaksi lama.
 9. Status cetak dikelola terpisah dari status transaksi.
 10. Kegagalan cetak **tidak** membatalkan transaksi yang sudah tersimpan.
+11. `payment_method` hanya boleh `cash` (Tunai) atau `non_cash` (Non Tunai); default `cash`.
+12. Untuk Non Tunai, `paid_amount` dianggap sebesar `total` sehingga `change_amount = 0`.
+13. Struk menampilkan baris nominal dibayar dengan label metode: `Tunai` / `Non Tunai`.
 
 **Formula:** `subtotal = Σ line_total`; `total = subtotal − discount_amount`; `change = paid_amount − total`.
 
@@ -646,7 +696,7 @@ function previewReceipt(t: Transaction, s: PrinterSettings): string;
 
 ### 10.3 Konten Struk
 
-Nama toko · nomor transaksi · tanggal & waktu · nama produk · kuantitas · harga satuan · total per item · subtotal · diskon · total · nominal dibayar · kembalian · pesan penutup opsional.
+Nama toko · nomor transaksi · tanggal & waktu · nama produk · kuantitas · harga satuan · total per item · subtotal · diskon · total · **nominal dibayar dengan label metode (Tunai / Non Tunai)** · kembalian (hanya tunai) · pesan penutup opsional.
 
 ### 10.4 Failure Handling
 
@@ -700,7 +750,7 @@ Gradle/Kotlin aplikasi bila ada konflik.
 - Perhitungan subtotal, total, kembalian.
 - Generator SKU & nomor transaksi (termasuk race).
 - Validasi harga & kuantitas.
-- Validasi duplikat SKU/barcode.
+- Validasi duplikat SKU (termasuk boleh dipakai ulang setelah arsip).
 - Format data struk.
 - Optimistic concurrency (versi basi, retry tanpa konflik, `force`).
 - Perbandingan konflik per-field & resolusi item yang diparkir.
@@ -709,8 +759,9 @@ Gradle/Kotlin aplikasi bila ada konflik.
 
 - Registrasi, login, logout.
 - CRUD produk + arsip.
-- Lookup barcode (ditemukan / tidak).
-- Pencarian produk (nama/SKU/barcode).
+- Lookup SKU / kode hasil scan (ditemukan / tidak).
+- Pencarian produk (nama/SKU) + urutan katalog (`sort`) + saran `next-sku`.
+- Metode pembayaran: default tunai, non tunai tersimpan, nilai tak dikenal ditolak, filter `payment_method`, pencarian nomor transaksi.
 - Otorisasi lintas akun (user A tidak bisa akses data user B).
 - Pembuatan transaksi + snapshot harga.
 - Idempotensi transaksi (request ganda → satu transaksi).
@@ -720,7 +771,7 @@ Gradle/Kotlin aplikasi bila ada konflik.
 ### 12.3 Android Integration Tests
 
 - Izin kamera (diberikan / ditolak).
-- Scan valid / barcode tidak terdaftar.
+- Scan valid / kode tidak terdaftar.
 - Navigasi scanner → detail produk.
 - Koneksi printer, test print, cetak & cetak ulang.
 - Perilaku saat jaringan terputus.
@@ -729,8 +780,8 @@ Gradle/Kotlin aplikasi bila ada konflik.
 
 **Terverifikasi otomatis** (backend `php artisan test`, mobile `npm run test.unit`):
 
-- [x] Produk dapat ditambah & dicari lewat semua metode — isolasi, validasi SKU/barcode, dan tiap mode input tercakup test.
-- [x] Barcode dipindai menampilkan harga yang benar — lookup barcode (ditemukan/tidak) teruji di API.
+- [x] Produk dapat ditambah & dicari lewat semua metode — isolasi, validasi SKU (termasuk pakai ulang setelah arsip), urutan katalog, dan tiap mode input tercakup test.
+- [x] Kode dipindai menampilkan harga yang benar — lookup SKU/kode scan (ditemukan/tidak) teruji di API.
 - [x] Data pengguna terisolasi — test lintas akun untuk produk, kategori, transaksi, dan struk (`404`).
 - [x] Transaksi tersimpan dengan perhitungan benar — total/kembalian dihitung server, snapshot item teruji.
 - [x] Request transaksi berulang tidak menghasilkan duplikasi — idempotency key teruji (`201` lalu `200`, satu baris).
@@ -765,7 +816,7 @@ Migrations, product API, category API, generator SKU, halaman katalog, form tamb
 
 ### Phase 3 — Price Checker
 
-Integrasi barcode scanner, lookup barcode, pencarian nama/SKU, tampilan detail harga, alur "tidak ditemukan", integrasi scanner ↔ form produk, uji di perangkat fisik.
+Integrasi barcode scanner, lookup SKU (kode hasil scan), pencarian nama/SKU, tampilan detail harga, alur "tidak ditemukan", integrasi scanner ↔ form produk, uji di perangkat fisik.
 **Deliverable:** price checker siap pakai. **(Puncak P0)**
 
 ### Phase 4 — Cloud Synchronization
@@ -795,8 +846,9 @@ Jalankan semua test, uji end-to-end, uji keamanan/isolasi data, uji jaringan lam
 
 Yang sudah dikerjakan di Phase 7:
 
-- **Test:** 56 test backend (isolasi kategori/produk/transaksi/struk, idempotensi, snapshot,
-  rate limit, konflik versi) dan 40 test mobile; Pint, ESLint, `tsc`, dan build produksi bersih.
+- **Test:** 64 test backend (isolasi kategori/produk/transaksi/struk, idempotensi, snapshot,
+  rate limit, konflik versi, SKU=barcode, metode pembayaran, urutan katalog) dan 40 test mobile;
+  Pint, ESLint, `tsc`, dan build produksi bersih.
 - **Keamanan:** rate limit `auth` (10/menit) dan API terautentikasi (120/menit per pengguna);
   amplop error konsisten; isolasi data teruji lintas akun.
 - **Konfigurasi produksi:** `.env.example` produksi (PostgreSQL, `APP_DEBUG=false`, HTTPS),
@@ -815,13 +867,25 @@ Kolom `version` pada `products`, deteksi konflik optimistis pada `PATCH /product
 ("Perubahan Bentrok") di header aplikasi.
 **Deliverable:** edit dari dua perangkat tidak saling menimpa diam-diam; pengguna memilih pemenangnya. *(selesai)*
 
+### Phase 9 — Penyatuan SKU & Redesain UI (P1)
+
+Menggabungkan **SKU dan barcode** menjadi satu kolom `sku` (migrasi `merge_barcode_into_sku`,
+lookup `?sku=`, `GET /products/next-sku`, unique hanya antar produk aktif) dan menambahkan
+**metode pembayaran** (Tunai / Non Tunai) end-to-end. Aplikasi mobile dirombak mengikuti mockup:
+sistem desain biru `#2563EB`, Splash + Login, 4 tab (Beranda · Produk · POS · Riwayat), serta
+halaman Cek Harga, Pembayaran, dan Preview Struk sebagai halaman yang di-push (tanpa tab bar).
+Keranjang dipindahkan ke provider bersama (memori), form produk memakai satu kolom “SKU / Barcode”
+dengan tombol generate & scan, dan foto produk dihilangkan.
+**Deliverable:** satu kode produk di seluruh alur (scan → cari → jual → struk) dan tampilan baru
+yang konsisten dengan mockup. *(selesai; verifikasi perangkat menyusul)*
+
 ### Ketergantungan antar-Phase
 
 ```text
 P1 ──▶ P2 ──▶ P3 ──▶ P4
                      │
                      ▼
-                    P5 ──▶ P6 ──▶ P7 ──▶ P8 (P2)
+                    P5 ──▶ P6 ──▶ P7 ──▶ P8 (P2) ──▶ P9
 ```
 
 > **Checkpoint:** Jangan mulai P5 (POS) sebelum P3 (Price Checker) stabil dan teruji di perangkat fisik.
@@ -834,7 +898,7 @@ P1 ──▶ P2 ──▶ P3 ──▶ P4
 |---|---|---|
 | Library printer tidak cocok dengan printer fisik | P6 terhambat | Pilih printer target lebih awal; abstraksi `PrinterService`; uji cepat |
 | Race condition SKU/transaksi | Data ganda | Sequence/`FOR UPDATE` + unique constraint + retry |
-| Barcode duplikat lintas input | Data kotor | Partial unique index + validasi backend |
+| SKU duplikat lintas input | Data kotor | Partial unique index + validasi backend |
 | Kualitas kamera/barcode sulit | UX buruk | Mode input manual sebagai fallback |
 | Koneksi tidak stabil | Data terlihat "tersimpan" padahal tidak | Error eksplisit + TanStack Query retry + indikator status |
 | Dua perangkat mengedit produk yang sama | Perubahan hilang tanpa jejak | Kolom `version` + `409 CONFLICT` + dialog resolusi eksplisit (§9.2) |
@@ -847,7 +911,7 @@ P1 ──▶ P2 ──▶ P3 ──▶ P4
 MVP selesai ketika pengguna dapat:
 
 1. Login dari perangkat Android.
-2. Menambah produk dengan SKU otomatis atau barcode hasil scan.
+2. Menambah produk dengan SKU otomatis atau kode hasil scan.
 3. Mengedit & mengarsipkan produk.
 4. Mengecek harga via kamera atau pencarian.
 5. Mengakses katalog yang sama dari beberapa perangkat.

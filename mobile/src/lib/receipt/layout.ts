@@ -1,4 +1,5 @@
 import type { Transaction } from '../../types';
+import { paymentMethodLabel } from '../../types';
 import { formatDateTime } from '../format';
 import { formatAmount } from './amount';
 import { PAPER_COLUMNS, type ReceiptLine, type ReceiptOptions } from './types';
@@ -90,7 +91,11 @@ export function buildReceiptLines(transaction: Transaction, options: ReceiptOpti
     });
   }
   lines.push({ kind: 'row', left: 'TOTAL', right: formatAmount(transaction.total), bold: true });
-  lines.push({ kind: 'row', left: 'Tunai', right: formatAmount(transaction.paid_amount) });
+  lines.push({
+    kind: 'row',
+    left: paymentMethodLabel(transaction.payment_method),
+    right: formatAmount(transaction.paid_amount),
+  });
   lines.push({ kind: 'row', left: 'Kembalian', right: formatAmount(transaction.change_amount) });
 
   if (options.footer?.trim()) {

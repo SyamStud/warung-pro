@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import {
-  IonBadge,
-  IonButton,
   IonButtons,
   IonContent,
   IonFab,
@@ -10,31 +8,25 @@ import {
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonItem,
-  IonLabel,
-  IonList,
   IonNote,
   IonPage,
   IonRefresher,
   IonRefresherContent,
-  IonSearchbar,
-  IonSelect,
-  IonSelectOption,
   IonSpinner,
   IonTitle,
   IonToolbar,
   useIonAlert,
   useIonToast,
 } from '@ionic/react';
-import { addOutline, pricetagsOutline } from 'ionicons/icons';
+import { addOutline, closeCircle, pricetagsOutline, searchOutline } from 'ionicons/icons';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { categoriesApi } from '../api/categories';
-import { productsApi } from '../api/products';
+import { productsApi, type ProductSort } from '../api/products';
 import ProductDetailModal from '../components/ProductDetailModal';
 import ProductFormModal from '../components/ProductFormModal';
+import ProductRow from '../components/ProductRow';
 import ConnectionBanner from '../components/ConnectionBanner';
 import SyncStatus from '../components/SyncStatus';
-import { formatRupiah } from '../lib/format';
 import { categoryKeys, productKeys } from '../lib/queryKeys';
 import { ApiError } from '../lib/http';
 import { applyOverlay } from '../lib/offline/products';
@@ -44,6 +36,14 @@ import type { Product } from '../types';
 
 const PAGE_SIZE = 20;
 
+const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
+  { value: 'newest', label: 'Terbaru' },
+  { value: 'name', label: 'Nama A-Z' },
+  { value: 'price_asc', label: 'Harga terendah' },
+  { value: 'price_desc', label: 'Harga tertinggi' },
+];
+
+/** 5 · Katalog Produk — search, category chips, sort, and the product list. */
 const Products: React.FC = () => {
   const queryClient = useQueryClient();
   const [presentToast] = useIonToast();
@@ -52,13 +52,18 @@ const Products: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [sort, setSort] = useState<ProductSort>('newest');
   const debouncedSearch = useDebouncedValue(search, 300);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [detail, setDetail] = useState<Product | null>(null);
 
-  const filters = { search: debouncedSearch || undefined, category_id: categoryId };
+  const filters = {
+    search: debouncedSearch.trim() || undefined,
+    category_id: categoryId,
+    sort,
+  };
 
   const categoriesQuery = useQuery({
     queryKey: categoryKeys.all,
@@ -89,11 +94,6 @@ const Products: React.FC = () => {
   const showToast = (message: string, color: string = 'success') =>
     presentToast({ message, duration: 2000, color, position: 'top' });
 
-  const openCreate = () => {
-    setEditing(null);
-    setFormOpen(true);
-  };
-
   const promptAddCategory = () => {
     presentAlert({
       header: 'Kategori baru',
@@ -119,37 +119,12 @@ const Products: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader>
+      <IonHeader className="app-header">
         <IonToolbar>
-          <IonTitle>Produk</IonTitle>
+          <IonTitle className="app-title-bar">Katalog Produk</IonTitle>
           <IonButtons slot="end">
             <SyncStatus />
-            <IonButton onClick={promptAddCategory}>
-              <IonIcon slot="icon-only" icon={pricetagsOutline} />
-            </IonButton>
           </IonButtons>
-        </IonToolbar>
-        <IonToolbar>
-          <IonSearchbar
-            value={search}
-            onIonInput={(e) => setSearch(e.detail.value ?? '')}
-            debounce={0}
-            placeholder="Cari nama, SKU, atau barcode"
-          />
-        </IonToolbar>
-        <IonToolbar>
-          <IonSelect
-            value={categoryId}
-            placeholder="Semua kategori"
-            onIonChange={(e) => setCategoryId(e.detail.value ?? null)}
-          >
-            <IonSelectOption value={null}>Semua kategori</IonSelectOption>
-            {categories.map((category) => (
-              <IonSelectOption key={category.id} value={category.id}>
-                {category.name}
-              </IonSelectOption>
-            ))}
-          </IonSelect>
         </IonToolbar>
       </IonHeader>
 
@@ -166,56 +141,111 @@ const Products: React.FC = () => {
 
         <ConnectionBanner />
 
-        {productsQuery.isLoading && (
-          <div className="ion-padding ion-text-center">
-            <IonSpinner name="crescent" />
+        <div className="screen">
+          <div className="search">
+            <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nama atau SKU"
+              aria-label="Cari produk"
+            />
+            {search !== '' && (
+              <button
+                type="button"
+                className="search__clear"
+                aria-label="Hapus pencarian"
+                onClick={() => setSearch('')}
+              >
+                <IonIcon icon={closeCircle} />
+              </button>
+            )}
           </div>
-        )}
 
-        {listError && (
-          <IonNote color="danger" className="ion-display-block ion-padding">
-            {listError}
-          </IonNote>
-        )}
+          <div className="chip-row" style={{ marginTop: 12 }}>
+            <button
+              type="button"
+              className={`chip${categoryId === null ? ' chip--active' : ''}`}
+              onClick={() => setCategoryId(null)}
+            >
+              Semua
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                className={`chip${categoryId === category.id ? ' chip--active' : ''}`}
+                onClick={() => setCategoryId(category.id)}
+              >
+                {category.name}
+              </button>
+            ))}
+            <button type="button" className="chip" onClick={promptAddCategory}>
+              <IonIcon icon={pricetagsOutline} /> Kategori
+            </button>
+          </div>
 
-        {!productsQuery.isLoading && !listError && visibleProducts.length === 0 && (
-          <IonNote color="medium" className="ion-display-block ion-padding">
-            Belum ada produk. Tekan tombol + untuk menambahkan.
-          </IonNote>
-        )}
+          <div className="section-head">
+            <h2 className="section-head__title">
+              {visibleProducts.length > 0 ? `${visibleProducts.length} produk` : 'Produk'}
+            </h2>
+            <select
+              className="input"
+              style={{ minHeight: 42, width: 'auto', fontSize: 13, paddingRight: 34 }}
+              value={sort}
+              aria-label="Urutkan produk"
+              onChange={(e) => setSort(e.target.value as ProductSort)}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <IonList>
-          {visibleProducts.map((product) => (
-            <IonItem key={product.id} button onClick={() => setDetail(product)}>
-              <IonLabel>
-                <h2>{product.name}</h2>
-                <p>
-                  {product.sku}
-                  {product.barcode ? ` · ${product.barcode}` : ''}
-                </p>
-              </IonLabel>
-              <div slot="end" style={{ textAlign: 'right' }}>
-                <div>{formatRupiah(product.selling_price)}</div>
-                {product.id < 0 && <IonBadge color="warning">Menunggu</IonBadge>}
-                {!product.is_active && <IonBadge color="medium">Arsip</IonBadge>}
-              </div>
-            </IonItem>
-          ))}
-        </IonList>
+          {productsQuery.isLoading && (
+            <div className="spinner-center">
+              <IonSpinner name="crescent" />
+            </div>
+          )}
 
-        <IonInfiniteScroll
-          disabled={!productsQuery.hasNextPage}
-          onIonInfinite={async (event) => {
-            await productsQuery.fetchNextPage();
-            await event.target.complete();
-          }}
-        >
-          <IonInfiniteScrollContent loadingText="Memuat lagi..." />
-        </IonInfiniteScroll>
+          {listError && <IonNote className="note note--error">{listError}</IonNote>}
+
+          {!productsQuery.isLoading && !listError && visibleProducts.length === 0 && (
+            <div className="card empty-state">
+              <p className="empty-state__title">Produk tidak ditemukan</p>
+              <p className="empty-state__text">
+                Coba kata kunci lain, atau tambahkan produk baru lewat tombol +.
+              </p>
+            </div>
+          )}
+
+          <div className="list-stack">
+            {visibleProducts.map((product) => (
+              <ProductRow key={product.id} product={product} onClick={() => setDetail(product)} />
+            ))}
+          </div>
+
+          <IonInfiniteScroll
+            disabled={!productsQuery.hasNextPage}
+            onIonInfinite={async (event) => {
+              await productsQuery.fetchNextPage();
+              await event.target.complete();
+            }}
+          >
+            <IonInfiniteScrollContent loadingText="Memuat lagi..." />
+          </IonInfiniteScroll>
+        </div>
       </IonContent>
 
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton onClick={openCreate}>
+        <IonFabButton
+          onClick={() => {
+            setEditing(null);
+            setFormOpen(true);
+          }}
+        >
           <IonIcon icon={addOutline} />
         </IonFabButton>
       </IonFab>

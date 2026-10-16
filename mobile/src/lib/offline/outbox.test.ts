@@ -122,7 +122,6 @@ const serverProduct = {
   id: 7,
   name: 'Kopi Sachet',
   sku: 'PRD-000007',
-  barcode: null,
   unit: 'pcs',
   selling_price: 4500,
   category_id: null,

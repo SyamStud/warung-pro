@@ -4,21 +4,14 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
+  IonIcon,
   IonModal,
-  IonNote,
-  IonSelect,
-  IonSelectOption,
   IonSpinner,
-  IonTextarea,
   IonTitle,
   IonToolbar,
   useIonToast,
 } from '@ionic/react';
+import { printOutline, searchOutline } from 'ionicons/icons';
 import type { PrinterDevice } from '@devlas/capacitor-thermal-printer';
 import { PAPER_LABELS, PAPER_WIDTHS } from '../lib/receipt';
 import {
@@ -41,6 +34,8 @@ interface PrinterSettingsModalProps {
   onDismiss: () => void;
 }
 
+const TRANSPORTS: PrinterTransportKind[] = ['bluetooth', 'usb', 'tcp'];
+
 function deviceKey(device: PrinterDevice): string {
   return device.transport === 'usb'
     ? `usb:${device.vendorId}:${device.productId}`
@@ -61,6 +56,7 @@ function deviceLabel(device: PrinterDevice): string {
   return `${device.name ?? 'Printer Bluetooth'} · ${device.address}`;
 }
 
+/** Printer + receipt paper settings (58mm / 80mm, Bluetooth / USB / WiFi). */
 const PrinterSettingsModal: React.FC<PrinterSettingsModalProps> = ({ isOpen, onDismiss }) => {
   const [presentToast] = useIonToast();
   const native = isPrintingSupported();
@@ -152,12 +148,12 @@ const PrinterSettingsModal: React.FC<PrinterSettingsModalProps> = ({ isOpen, onD
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader>
+      <IonHeader className="app-header">
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton onClick={onDismiss}>Tutup</IonButton>
           </IonButtons>
-          <IonTitle>Pengaturan Printer</IonTitle>
+          <IonTitle className="app-title-bar">Pengaturan Printer</IonTitle>
           <IonButtons slot="end">
             <IonButton strong disabled={busy} onClick={save}>
               {busy ? <IonSpinner name="dots" /> : 'Simpan'}
@@ -166,187 +162,219 @@ const PrinterSettingsModal: React.FC<PrinterSettingsModalProps> = ({ isOpen, onD
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        {!native && (
-          <IonNote color="warning" className="ion-display-block ion-padding-bottom">
-            Pencetakan hanya tersedia di aplikasi Android. Di browser, struk akan ditampilkan
-            sebagai pratinjau.
-          </IonNote>
-        )}
+      <IonContent>
+        <div className="screen">
+          {!native && (
+            <p className="note note--warn">
+              Pencetakan hanya tersedia di aplikasi Android. Di browser, struk akan ditampilkan
+              sebagai pratinjau.
+            </p>
+          )}
 
-        <IonList>
-          <IonListHeader>
-            <IonLabel>Struk</IonLabel>
-          </IonListHeader>
+          <div className="card">
+            <h2 className="card__title" style={{ marginBottom: 12 }}>
+              Struk
+            </h2>
 
-          <IonItem>
-            <IonSelect
-              label="Lebar kertas"
-              labelPlacement="stacked"
-              value={settings.paperWidth}
-              onIonChange={(e) =>
-                setSettings((current) => ({ ...current, paperWidth: e.detail.value }))
-              }
-            >
-              {PAPER_WIDTHS.map((width) => (
-                <IonSelectOption key={width} value={width}>
-                  {PAPER_LABELS[width]}
-                </IonSelectOption>
-              ))}
-            </IonSelect>
-          </IonItem>
+            <label className="field">
+              <span className="field__label">Lebar kertas</span>
+              <select
+                className="input"
+                value={settings.paperWidth}
+                onChange={(e) =>
+                  setSettings((current) => ({
+                    ...current,
+                    paperWidth: e.target.value as PrinterSettings['paperWidth'],
+                  }))
+                }
+              >
+                {PAPER_WIDTHS.map((width) => (
+                  <option key={width} value={width}>
+                    {PAPER_LABELS[width]}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <IonItem>
-            <IonInput
-              label="Nama toko"
-              labelPlacement="stacked"
-              value={settings.storeName}
-              onIonInput={(e) =>
-                setSettings((current) => ({ ...current, storeName: e.detail.value ?? '' }))
-              }
-            />
-          </IonItem>
+            <label className="field">
+              <span className="field__label">Nama toko</span>
+              <input
+                className="input"
+                value={settings.storeName}
+                onChange={(e) =>
+                  setSettings((current) => ({ ...current, storeName: e.target.value }))
+                }
+              />
+            </label>
 
-          <IonItem>
-            <IonInput
-              label="Alamat (opsional)"
-              labelPlacement="stacked"
-              value={settings.storeAddress}
-              onIonInput={(e) =>
-                setSettings((current) => ({ ...current, storeAddress: e.detail.value ?? '' }))
-              }
-            />
-          </IonItem>
+            <label className="field">
+              <span className="field__label">Alamat (opsional)</span>
+              <input
+                className="input"
+                value={settings.storeAddress}
+                onChange={(e) =>
+                  setSettings((current) => ({ ...current, storeAddress: e.target.value }))
+                }
+              />
+            </label>
 
-          <IonItem>
-            <IonTextarea
-              label="Footer (opsional)"
-              labelPlacement="stacked"
-              autoGrow
-              value={settings.footer}
-              onIonInput={(e) =>
-                setSettings((current) => ({ ...current, footer: e.detail.value ?? '' }))
-              }
-            />
-          </IonItem>
-        </IonList>
+            <label className="field" style={{ marginBottom: 0 }}>
+              <span className="field__label">Footer (opsional)</span>
+              <input
+                className="input"
+                value={settings.footer}
+                onChange={(e) =>
+                  setSettings((current) => ({ ...current, footer: e.target.value }))
+                }
+              />
+            </label>
+          </div>
 
-        <IonList>
-          <IonListHeader>
-            <IonLabel>Koneksi printer</IonLabel>
-          </IonListHeader>
+          <div className="card" style={{ marginTop: 12 }}>
+            <h2 className="card__title" style={{ marginBottom: 12 }}>
+              Koneksi printer
+            </h2>
 
-          <IonItem>
-            <IonSelect
-              label="Jenis koneksi"
-              labelPlacement="stacked"
-              value={transport}
-              onIonChange={(e) => chooseTransport(e.detail.value)}
-            >
-              {(['bluetooth', 'usb', 'tcp'] as PrinterTransportKind[]).map((kind) => (
-                <IonSelectOption key={kind} value={kind}>
+            <div className="segmented" role="tablist" aria-label="Jenis koneksi">
+              {TRANSPORTS.map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  role="tab"
+                  aria-selected={transport === kind}
+                  className={`segmented__option${
+                    transport === kind ? ' segmented__option--active' : ''
+                  }`}
+                  style={{ fontSize: 13 }}
+                  onClick={() => chooseTransport(kind)}
+                >
                   {TRANSPORT_LABELS[kind]}
-                </IonSelectOption>
+                </button>
               ))}
-            </IonSelect>
-          </IonItem>
+            </div>
 
-          {transport === 'tcp' && (
-            <>
-              <IonItem>
-                <IonInput
-                  label="Alamat IP / host"
-                  labelPlacement="stacked"
-                  placeholder="192.168.1.50"
-                  value={settings.printer?.host ?? ''}
-                  onIonInput={(e) =>
-                    setSettings((current) => ({
-                      ...current,
-                      printer: {
-                        transport: 'tcp',
-                        label: 'WiFi / LAN',
-                        host: e.detail.value ?? '',
-                        port: current.printer?.port ?? 9100,
-                      },
-                    }))
-                  }
-                />
-              </IonItem>
-              <IonItem>
-                <IonInput
-                  type="number"
-                  inputmode="numeric"
-                  label="Port"
-                  labelPlacement="stacked"
-                  placeholder="9100"
-                  value={String(settings.printer?.port ?? 9100)}
-                  onIonInput={(e) =>
-                    setSettings((current) => ({
-                      ...current,
-                      printer: {
-                        transport: 'tcp',
-                        label: 'WiFi / LAN',
-                        host: current.printer?.host ?? '',
-                        port: Number(e.detail.value) || 9100,
-                      },
-                    }))
-                  }
-                />
-              </IonItem>
-            </>
-          )}
-
-          {transport !== 'tcp' && (
-            <>
-              <IonItem>
-                <IonLabel>
-                  <h3>Printer terpilih</h3>
-                  <p>{settings.printer ? settings.printer.label : 'Belum dipilih'}</p>
-                </IonLabel>
-                <IonButton
-                  slot="end"
-                  fill="outline"
-                  disabled={!native || listing}
-                  onClick={searchDevices}
+            {transport === 'tcp' ? (
+              <div className="field__row" style={{ gap: 12, marginTop: 14 }}>
+                <label className="field" style={{ flex: 2, marginBottom: 0 }}>
+                  <span className="field__label">Alamat IP / host</span>
+                  <input
+                    className="input"
+                    placeholder="192.168.1.50"
+                    value={settings.printer?.host ?? ''}
+                    onChange={(e) =>
+                      setSettings((current) => ({
+                        ...current,
+                        printer: {
+                          transport: 'tcp',
+                          label: 'WiFi / LAN',
+                          host: e.target.value,
+                          port: current.printer?.port ?? 9100,
+                        },
+                      }))
+                    }
+                  />
+                </label>
+                <label className="field" style={{ flex: 1, marginBottom: 0 }}>
+                  <span className="field__label">Port</span>
+                  <input
+                    className="input"
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="9100"
+                    value={String(settings.printer?.port ?? 9100)}
+                    onChange={(e) =>
+                      setSettings((current) => ({
+                        ...current,
+                        printer: {
+                          transport: 'tcp',
+                          label: 'WiFi / LAN',
+                          host: current.printer?.host ?? '',
+                          port: Number(e.target.value) || 9100,
+                        },
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    marginTop: 14,
+                  }}
                 >
-                  {listing ? <IonSpinner name="dots" /> : 'Cari perangkat'}
-                </IonButton>
-              </IonItem>
+                  <div>
+                    <p className="field__label" style={{ marginBottom: 2 }}>
+                      Printer terpilih
+                    </p>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--app-muted)' }}>
+                      {settings.printer ? settings.printer.label : 'Belum dipilih'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn--outline btn--sm"
+                    disabled={!native || listing}
+                    onClick={searchDevices}
+                  >
+                    {listing ? (
+                      <IonSpinner name="dots" />
+                    ) : (
+                      <>
+                        <IonIcon icon={searchOutline} /> Cari perangkat
+                      </>
+                    )}
+                  </button>
+                </div>
 
-              {devices.map((device) => (
-                <IonItem
-                  key={deviceKey(device)}
-                  button
-                  onClick={() =>
-                    setSettings((current) => ({ ...current, printer: savedPrinterFromDevice(device) }))
-                  }
-                >
-                  <IonLabel>
-                    <h2>{deviceLabel(device)}</h2>
-                    {device.canPrint === false && <p>Tanpa endpoint cetak</p>}
-                  </IonLabel>
-                  {selectedKey === deviceKey(device) && <IonNote slot="end">Dipilih</IonNote>}
-                </IonItem>
-              ))}
-            </>
-          )}
-        </IonList>
+                <div className="list-stack" style={{ marginTop: 12 }}>
+                  {devices.map((device) => (
+                    <button
+                      key={deviceKey(device)}
+                      type="button"
+                      className="product-row"
+                      onClick={() =>
+                        setSettings((current) => ({
+                          ...current,
+                          printer: savedPrinterFromDevice(device),
+                        }))
+                      }
+                    >
+                      <span className="thumb" aria-hidden="true">
+                        <IonIcon icon={printOutline} />
+                      </span>
+                      <span className="product-row__main">
+                        <span className="product-row__name">{deviceLabel(device)}</span>
+                        {device.canPrint === false && (
+                          <span className="product-row__sku">Tanpa endpoint cetak</span>
+                        )}
+                      </span>
+                      {selectedKey === deviceKey(device) && (
+                        <span className="badge badge--green">Dipilih</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
-        {error && (
-          <IonNote color="danger" className="ion-display-block ion-padding-vertical">
-            {error}
-          </IonNote>
-        )}
+          {error && <p className="note note--error">{error}</p>}
 
-        <IonButton
-          expand="block"
-          fill="outline"
-          className="ion-margin-top"
-          disabled={!native || busy || !settings.printer}
-          onClick={runTestPrint}
-        >
-          Cetak uji
-        </IonButton>
+          <button
+            type="button"
+            className="btn btn--plain"
+            style={{ marginTop: 16 }}
+            disabled={!native || busy || !settings.printer}
+            onClick={runTestPrint}
+          >
+            <IonIcon icon={printOutline} /> Cetak uji
+          </button>
+        </div>
       </IonContent>
     </IonModal>
   );

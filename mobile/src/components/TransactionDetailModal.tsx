@@ -1,22 +1,16 @@
 import {
-  IonBadge,
   IonButton,
   IonButtons,
   IonContent,
   IonHeader,
   IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
   IonModal,
-  IonNote,
   IonTitle,
   IonToolbar,
 } from '@ionic/react';
 import { printOutline } from 'ionicons/icons';
 import { formatDateTime, formatRupiah } from '../lib/format';
-import type { Transaction } from '../types';
+import { paymentMethodLabel, type Transaction } from '../types';
 
 interface TransactionDetailModalProps {
   isOpen: boolean;
@@ -34,77 +28,102 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   if (!transaction) return null;
 
   const items = transaction.items ?? [];
+  const isCash = transaction.payment_method === 'cash';
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader>
+      <IonHeader className="app-header">
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton onClick={onDismiss}>Tutup</IonButton>
           </IonButtons>
-          <IonTitle>Detail Transaksi</IonTitle>
+          <IonTitle className="app-title-bar">Detail Transaksi</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <h2 style={{ marginTop: 0 }}>{transaction.transaction_number}</h2>
-        <IonNote color="medium">{formatDateTime(transaction.created_at)}</IonNote>
-        <div className="ion-margin-top">
-          <IonBadge color={transaction.status === 'paid' ? 'success' : 'medium'}>
-            {transaction.status === 'paid' ? 'Lunas' : 'Dibatalkan'}
-          </IonBadge>
-        </div>
+      <IonContent>
+        <div className="screen">
+          <div className="card">
+            <h2 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>
+              {transaction.transaction_number}
+            </h2>
+            <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 13 }}>
+              {formatDateTime(transaction.created_at)}
+            </p>
 
-        <IonList>
-          <IonListHeader>
-            <IonLabel>Item</IonLabel>
-          </IonListHeader>
-          {items.map((item) => (
-            <IonItem key={item.id}>
-              <IonLabel>
-                <h2>{item.product_name}</h2>
-                <p>
-                  {item.quantity} × {formatRupiah(item.unit_price)}
-                </p>
-              </IonLabel>
-              <div slot="end" style={{ fontWeight: 600 }}>
-                {formatRupiah(item.line_total)}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <span
+                className={`badge ${
+                  transaction.status === 'paid' ? 'badge--green' : 'badge--grey'
+                }`}
+              >
+                {transaction.status === 'paid' ? 'Lunas' : 'Dibatalkan'}
+              </span>
+              <span className="badge badge--blue">
+                {paymentMethodLabel(transaction.payment_method)}
+              </span>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginTop: 12 }}>
+            <h3 className="card__title" style={{ marginBottom: 10 }}>
+              Item ({items.length})
+            </h3>
+            {items.map((item) => (
+              <div key={item.id} className="receipt-card__item">
+                <span>
+                  <span className="receipt-card__item-name">{item.product_name}</span>
+                  <span className="receipt-card__item-sub" style={{ display: 'block' }}>
+                    {item.quantity} × {formatRupiah(item.unit_price)}
+                    {item.sku ? ` · ${item.sku}` : ''}
+                  </span>
+                </span>
+                <span className="totals__value">{formatRupiah(item.line_total)}</span>
               </div>
-            </IonItem>
-          ))}
-        </IonList>
+            ))}
+          </div>
 
-        <IonList>
-          <IonItem>
-            <IonLabel>Subtotal</IonLabel>
-            <div slot="end">{formatRupiah(transaction.subtotal)}</div>
-          </IonItem>
-          {transaction.discount_amount > 0 && (
-            <IonItem>
-              <IonLabel>Diskon</IonLabel>
-              <div slot="end">- {formatRupiah(transaction.discount_amount)}</div>
-            </IonItem>
-          )}
-          <IonItem>
-            <IonLabel>
-              <strong>Total</strong>
-            </IonLabel>
-            <strong slot="end">{formatRupiah(transaction.total)}</strong>
-          </IonItem>
-          <IonItem>
-            <IonLabel>Dibayar</IonLabel>
-            <div slot="end">{formatRupiah(transaction.paid_amount)}</div>
-          </IonItem>
-          <IonItem>
-            <IonLabel>Kembalian</IonLabel>
-            <div slot="end">{formatRupiah(transaction.change_amount)}</div>
-          </IonItem>
-        </IonList>
+          <div className="card" style={{ marginTop: 12 }}>
+            <div className="totals">
+              <div className="totals__row">
+                <span>Subtotal</span>
+                <span className="totals__value">{formatRupiah(transaction.subtotal)}</span>
+              </div>
+              {transaction.discount_amount > 0 && (
+                <div className="totals__row">
+                  <span>Diskon</span>
+                  <span className="totals__value">
+                    -{formatRupiah(transaction.discount_amount)}
+                  </span>
+                </div>
+              )}
+              <hr className="totals__divider" />
+              <div className="totals__row totals__row--strong">
+                <span>Total</span>
+                <span className="totals__value">{formatRupiah(transaction.total)}</span>
+              </div>
+              <div className="totals__row">
+                <span>{paymentMethodLabel(transaction.payment_method)}</span>
+                <span className="totals__value">{formatRupiah(transaction.paid_amount)}</span>
+              </div>
+              {isCash && (
+                <div className="totals__row">
+                  <span>Kembalian</span>
+                  <span className="totals__value">{formatRupiah(transaction.change_amount)}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
-        <IonButton expand="block" className="ion-margin-top" onClick={() => onPrint(transaction)}>
-          <IonIcon slot="start" icon={printOutline} />
-          Cetak struk
-        </IonButton>
+          <button
+            type="button"
+            className="btn btn--primary"
+            style={{ marginTop: 16 }}
+            onClick={() => onPrint(transaction)}
+          >
+            <IonIcon icon={printOutline} /> Cetak struk
+          </button>
+        </div>
       </IonContent>
     </IonModal>
   );

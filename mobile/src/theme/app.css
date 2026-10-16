@@ -1,0 +1,879 @@
+/* ==========================================================================
+   Global UI kit — the visual language shared by every screen.
+   Screens compose these classes; no screen defines its own palette.
+   ========================================================================== */
+
+/* --- Page scaffolding ---------------------------------------------------- */
+
+.screen {
+  padding: 4px 16px 28px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.screen--flush {
+  padding: 0 16px 28px;
+}
+
+.app-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--app-ink);
+  margin: 4px 0 14px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 10px;
+}
+
+.section-head__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--app-ink);
+  margin: 0;
+}
+
+.link {
+  color: var(--app-blue);
+  font-size: 13px;
+  font-weight: 600;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* --- Surfaces ------------------------------------------------------------ */
+
+.card {
+  background: var(--app-surface);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow);
+  padding: 16px;
+}
+
+.card--tight {
+  padding: 12px;
+  border-radius: var(--app-radius);
+}
+
+.card--outline {
+  box-shadow: none;
+  border: 1px solid var(--app-line);
+}
+
+.card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--app-ink);
+  margin: 0;
+}
+
+/* --- Greeting ------------------------------------------------------------ */
+
+.greeting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0 2px;
+}
+
+.greeting__avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex: none;
+}
+
+.greeting__name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--app-ink);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.greeting__hint {
+  font-size: 13px;
+  color: var(--app-muted);
+  margin: 2px 0 0;
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 18px;
+  border-radius: var(--app-radius);
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.06s ease, opacity 0.15s ease, background 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.99);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--app-blue);
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--app-blue-dark);
+}
+
+.btn--outline {
+  background: #fff;
+  color: var(--app-blue);
+  border: 1.5px solid var(--app-blue);
+}
+
+.btn--quiet {
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+}
+
+.btn--plain {
+  background: #fff;
+  color: var(--app-ink);
+  border: 1px solid var(--app-line-strong);
+}
+
+.btn--danger {
+  background: var(--app-red-soft);
+  color: var(--app-red);
+}
+
+.btn--sm {
+  min-height: 40px;
+  font-size: 14px;
+  width: auto;
+  padding: 0 14px;
+}
+
+.btn--icon {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: #fff;
+  border: 1px solid var(--app-line);
+  color: var(--app-ink);
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* --- Inputs -------------------------------------------------------------- */
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-ink);
+  margin-bottom: 6px;
+}
+
+.field__hint {
+  font-size: 12px;
+  color: var(--app-muted);
+  margin-top: 4px;
+}
+
+.field__error {
+  font-size: 12px;
+  color: var(--app-red);
+  margin-top: 4px;
+}
+
+.input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border-radius: var(--app-radius);
+  border: 1px solid var(--app-line-strong);
+  background: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--app-ink);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--app-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.input::placeholder {
+  color: var(--app-faint);
+}
+
+textarea.input {
+  min-height: 92px;
+  padding: 12px 14px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+select.input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--app-muted) 50%),
+    linear-gradient(135deg, var(--app-muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 22px, calc(100% - 15px) 22px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.field__row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.field__row .input {
+  flex: 1;
+}
+
+/* Search bar shaped like the mockup's pill. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--app-line);
+  border-radius: 999px;
+  padding: 0 16px;
+  min-height: 50px;
+  box-shadow: var(--app-shadow-soft);
+}
+
+.search__icon {
+  color: var(--app-faint);
+  font-size: 18px;
+  flex: none;
+}
+
+.search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--app-ink);
+  min-width: 0;
+}
+
+.search input::placeholder {
+  color: var(--app-faint);
+}
+
+.search__clear {
+  border: none;
+  background: transparent;
+  color: var(--app-faint);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* --- Chips --------------------------------------------------------------- */
+
+.chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 4px;
+  scrollbar-width: none;
+}
+
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid var(--app-line-strong);
+  background: #fff;
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 8px 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip--active {
+  background: var(--app-blue);
+  border-color: var(--app-blue);
+  color: #fff;
+}
+
+/* --- Badges -------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.badge--blue {
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+}
+
+.badge--green {
+  background: var(--app-green-soft);
+  color: var(--app-green);
+}
+
+.badge--amber {
+  background: var(--app-amber-soft);
+  color: var(--app-amber);
+}
+
+.badge--red {
+  background: var(--app-red-soft);
+  color: var(--app-red);
+}
+
+.badge--grey {
+  background: #eef1f6;
+  color: var(--app-muted);
+}
+
+/* --- Action grid (Beranda) ---------------------------------------------- */
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--app-surface);
+  border: none;
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow);
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.action-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.action-card__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+
+.action-card__hint {
+  font-size: 12px;
+  color: var(--app-muted);
+  margin-top: -4px;
+}
+
+/* --- Product rows -------------------------------------------------------- */
+
+.product-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: var(--app-surface);
+  border: none;
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow-soft);
+  padding: 12px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.thumb {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.product-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.product-row__name {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--app-ink);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-row__sku {
+  display: block;
+  font-size: 12px;
+  color: var(--app-muted);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-row__price {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--app-blue);
+  white-space: nowrap;
+}
+
+.product-row__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: none;
+}
+
+.product-row--result {
+  box-shadow: var(--app-shadow);
+}
+
+/* --- Stepper ------------------------------------------------------------- */
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--app-blue-softer);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.stepper__btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  color: var(--app-blue);
+  font-size: 17px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.stepper__value {
+  min-width: 26px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--app-ink);
+}
+
+/* --- Totals -------------------------------------------------------------- */
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.totals__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--app-muted);
+}
+
+.totals__row--strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+
+.totals__row--accent {
+  color: var(--app-blue);
+  font-weight: 700;
+}
+
+.totals__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.totals__divider {
+  height: 1px;
+  background: var(--app-line);
+  border: none;
+  margin: 2px 0;
+}
+
+/* --- Segmented control --------------------------------------------------- */
+
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+  background: var(--app-blue-softer);
+  border-radius: var(--app-radius);
+  padding: 5px;
+}
+
+.segmented__option {
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  min-height: 42px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--app-muted);
+  cursor: pointer;
+}
+
+.segmented__option--active {
+  background: var(--app-blue);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.24);
+}
+
+/* --- Camera viewfinder --------------------------------------------------- */
+
+.viewfinder {
+  position: relative;
+  border-radius: var(--app-radius-xl);
+  background: linear-gradient(160deg, #1f2937 0%, #0b1220 100%);
+  aspect-ratio: 3 / 4;
+  max-height: 360px;
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.viewfinder__frame {
+  position: relative;
+  width: 70%;
+  aspect-ratio: 1 / 1;
+  border-radius: 22px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14);
+}
+
+.viewfinder__frame::before,
+.viewfinder__frame::after {
+  content: '';
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 3px solid #fff;
+  border-radius: 4px;
+}
+
+.viewfinder__frame::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 16px;
+}
+
+.viewfinder__frame::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 16px;
+}
+
+.viewfinder__laser {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #93c5fd, transparent);
+}
+
+.viewfinder__badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+}
+
+/* --- Receipt ------------------------------------------------------------- */
+
+.receipt-card {
+  background: #fff;
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+  padding: 20px 18px;
+  font-size: 13.5px;
+  color: var(--app-ink);
+}
+
+.receipt-card__store {
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.receipt-card__meta {
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+
+.receipt-card__rule {
+  border: none;
+  border-top: 1px dashed var(--app-line-strong);
+  margin: 14px 0;
+}
+
+.receipt-card__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.receipt-card__item-name {
+  font-weight: 600;
+}
+
+.receipt-card__item-sub {
+  color: var(--app-muted);
+  font-size: 12px;
+}
+
+.receipt-card__line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.receipt-card__line--total {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.receipt-card__mono {
+  font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+  white-space: pre;
+  overflow-x: auto;
+  background: #f7f9fc;
+  border-radius: var(--app-radius-sm);
+  padding: 12px;
+  color: #334155;
+  margin: 0;
+}
+
+/* --- Empty & status states ---------------------------------------------- */
+
+.empty-state {
+  text-align: center;
+  padding: 34px 20px;
+  color: var(--app-muted);
+}
+
+.empty-state__icon {
+  font-size: 34px;
+  color: var(--app-faint);
+  margin-bottom: 10px;
+}
+
+.empty-state__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--app-ink);
+  margin: 0 0 4px;
+}
+
+.empty-state__text {
+  font-size: 13px;
+  margin: 0;
+}
+
+.note {
+  border-radius: var(--app-radius);
+  padding: 10px 12px;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.note--error {
+  background: var(--app-red-soft);
+  color: var(--app-red);
+}
+
+.note--info {
+  background: var(--app-blue-soft);
+  color: var(--app-blue-dark);
+}
+
+.note--warn {
+  background: var(--app-amber-soft);
+  color: var(--app-amber);
+}
+
+.spinner-center {
+  display: grid;
+  place-items: center;
+  padding: 32px 0;
+}
+
+/* --- Tab bar ------------------------------------------------------------- */
+
+ion-tab-bar.app-tabbar {
+  --background: var(--app-surface);
+  --color: var(--app-faint);
+  --color-selected: var(--app-blue);
+  border-top: 1px solid var(--app-line);
+  height: 62px;
+  padding-top: 4px;
+}
+
+ion-tab-bar.app-tabbar ion-tab-button {
+  font-size: 11px;
+  font-weight: 600;
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+}
+
+ion-tab-bar.app-tabbar ion-tab-button ion-icon {
+  font-size: 22px;
+}
+
+/* --- Ionic chrome tweaks ------------------------------------------------- */
+
+ion-header.app-header ion-toolbar {
+  --background: var(--app-bg);
+  --border-width: 0;
+  --min-height: 52px;
+}
+
+ion-header.app-header::after {
+  display: none;
+}
+
+ion-title.app-title-bar {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+
+/* The pushed pages (Cek Harga, Pembayaran, Struk) have no tab bar, but they
+   still get a back affordance from the router outlet's Ionic header. */
+.pushed-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 14px;
+}
+
+.pushed-header__back {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  border: 1px solid var(--app-line);
+  background: #fff;
+  color: var(--app-ink);
+  font-size: 19px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.pushed-header__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--app-ink);
+  margin: 0;
+}

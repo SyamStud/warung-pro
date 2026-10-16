@@ -1,16 +1,11 @@
 import { useState } from 'react';
 import {
-  IonBadge,
-  IonButton,
   IonButtons,
   IonContent,
   IonHeader,
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonItem,
-  IonLabel,
-  IonList,
   IonNote,
   IonPage,
   IonRefresher,
@@ -19,7 +14,7 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/react';
-import { printOutline } from 'ionicons/icons';
+import { closeCircle, printOutline, receiptOutline, searchOutline } from 'ionicons/icons';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { transactionsApi } from '../api/transactions';
 import ConnectionBanner from '../components/ConnectionBanner';
@@ -30,19 +25,34 @@ import { formatDateTime, formatRupiah } from '../lib/format';
 import { ApiError } from '../lib/http';
 import { transactionKeys } from '../lib/queryKeys';
 import { useReceiptPrinter } from '../hooks/useReceiptPrinter';
-import type { Transaction } from '../types';
+import { useDebouncedValue } from '../lib/useDebouncedValue';
+import { paymentMethodLabel, type PaymentMethod, type Transaction } from '../types';
 
 const PAGE_SIZE = 20;
 
-/** History — transaction list, detail, and receipt printing. */
+const METHOD_FILTERS: { value: PaymentMethod | 'all'; label: string }[] = [
+  { value: 'all', label: 'Semua' },
+  { value: 'cash', label: 'Tunai' },
+  { value: 'non_cash', label: 'Non Tunai' },
+];
+
+/** 11 · Riwayat Transaksi — search, payment-method chips, and reprint. */
 const History: React.FC = () => {
   const [detail, setDetail] = useState<Transaction | null>(null);
+  const [search, setSearch] = useState('');
+  const [method, setMethod] = useState<PaymentMethod | 'all'>('all');
+  const debouncedSearch = useDebouncedValue(search, 300);
   const printer = useReceiptPrinter();
 
+  const filters = {
+    search: debouncedSearch.trim() || undefined,
+    payment_method: method,
+  };
+
   const query = useInfiniteQuery({
-    queryKey: transactionKeys.list(),
+    queryKey: transactionKeys.list(filters),
     queryFn: ({ pageParam, signal }) =>
-      transactionsApi.list({ page: pageParam, per_page: PAGE_SIZE }, signal),
+      transactionsApi.list({ ...filters, page: pageParam, per_page: PAGE_SIZE }, signal),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.meta.current_page < lastPage.meta.last_page
@@ -57,13 +67,18 @@ const History: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader>
+      <IonHeader className="app-header">
         <IonToolbar>
-          <IonTitle>Riwayat</IonTitle>
+          <IonTitle className="app-title-bar">Riwayat Transaksi</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={printer.openSettings} aria-label="Pengaturan printer">
-              <IonIcon slot="icon-only" icon={printOutline} />
-            </IonButton>
+            <button
+              type="button"
+              className="btn btn--icon"
+              aria-label="Pengaturan printer"
+              onClick={printer.openSettings}
+            >
+              <IonIcon icon={printOutline} />
+            </button>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
@@ -81,52 +96,108 @@ const History: React.FC = () => {
 
         <ConnectionBanner />
 
-        {query.isLoading && (
-          <div className="ion-padding ion-text-center">
-            <IonSpinner name="crescent" />
+        <div className="screen">
+          <div className="search">
+            <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nomor transaksi"
+              aria-label="Cari nomor transaksi"
+            />
+            {search !== '' && (
+              <button
+                type="button"
+                className="search__clear"
+                aria-label="Hapus pencarian"
+                onClick={() => setSearch('')}
+              >
+                <IonIcon icon={closeCircle} />
+              </button>
+            )}
           </div>
-        )}
 
-        {error && (
-          <IonNote color="danger" className="ion-display-block ion-padding">
-            {error}
-          </IonNote>
-        )}
+          <div className="chip-row" style={{ marginTop: 12 }}>
+            {METHOD_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                className={`chip${method === filter.value ? ' chip--active' : ''}`}
+                onClick={() => setMethod(filter.value)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
 
-        {!query.isLoading && !error && transactions.length === 0 && (
-          <IonNote color="medium" className="ion-display-block ion-padding">
-            Belum ada transaksi. Transaksi dari tab Kasir akan tampil di sini.
-          </IonNote>
-        )}
+          <div className="section-head">
+            <h2 className="section-head__title">
+              {transactions.length > 0 ? `${transactions.length} transaksi` : 'Transaksi'}
+            </h2>
+          </div>
 
-        <IonList>
-          {transactions.map((transaction) => (
-            <IonItem key={transaction.id} button onClick={() => setDetail(transaction)}>
-              <IonLabel>
-                <h2>{transaction.transaction_number}</h2>
-                <p>
-                  {formatDateTime(transaction.created_at)} · {transaction.items?.length ?? 0} item
-                </p>
-              </IonLabel>
-              <div slot="end" style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 600 }}>{formatRupiah(transaction.total)}</div>
-                <IonBadge color={transaction.status === 'paid' ? 'success' : 'medium'}>
-                  {transaction.status === 'paid' ? 'Lunas' : 'Dibatalkan'}
-                </IonBadge>
-              </div>
-            </IonItem>
-          ))}
-        </IonList>
+          {query.isLoading && (
+            <div className="spinner-center">
+              <IonSpinner name="crescent" />
+            </div>
+          )}
 
-        <IonInfiniteScroll
-          disabled={!query.hasNextPage}
-          onIonInfinite={async (event) => {
-            await query.fetchNextPage();
-            await event.target.complete();
-          }}
-        >
-          <IonInfiniteScrollContent loadingText="Memuat lagi..." />
-        </IonInfiniteScroll>
+          {error && <IonNote className="note note--error">{error}</IonNote>}
+
+          {!query.isLoading && !error && transactions.length === 0 && (
+            <div className="card empty-state">
+              <IonIcon className="empty-state__icon" icon={receiptOutline} />
+              <p className="empty-state__title">Belum ada transaksi</p>
+              <p className="empty-state__text">Transaksi dari POS akan tampil di sini.</p>
+            </div>
+          )}
+
+          <div className="list-stack">
+            {transactions.map((transaction) => (
+              <button
+                key={transaction.id}
+                type="button"
+                className="product-row"
+                onClick={() => setDetail(transaction)}
+              >
+                <span className="thumb" aria-hidden="true">
+                  <IonIcon icon={receiptOutline} />
+                </span>
+
+                <span className="product-row__main">
+                  <span className="product-row__name">{transaction.transaction_number}</span>
+                  <span className="product-row__sku">
+                    {formatDateTime(transaction.created_at)} · {transaction.items?.length ?? 0} item
+                  </span>
+                </span>
+
+                <span className="product-row__aside">
+                  <span className="product-row__price">{formatRupiah(transaction.total)}</span>
+                  <span
+                    className={`badge ${
+                      transaction.status === 'paid' ? 'badge--green' : 'badge--grey'
+                    }`}
+                  >
+                    {transaction.status === 'paid' ? 'Lunas' : 'Dibatalkan'}
+                  </span>
+                  <span className="badge badge--blue">
+                    {paymentMethodLabel(transaction.payment_method)}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <IonInfiniteScroll
+            disabled={!query.hasNextPage}
+            onIonInfinite={async (event) => {
+              await query.fetchNextPage();
+              await event.target.complete();
+            }}
+          >
+            <IonInfiniteScrollContent loadingText="Memuat lagi..." />
+          </IonInfiniteScroll>
+        </div>
       </IonContent>
 
       <TransactionDetailModal

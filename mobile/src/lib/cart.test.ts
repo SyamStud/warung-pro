@@ -13,7 +13,6 @@ function product(id: number, price: number, name = `Produk ${id}`): Product {
     id,
     name,
     sku: `PRD-${id}`,
-    barcode: null,
     unit: 'pcs',
     selling_price: price,
     category_id: null,

@@ -26,7 +26,6 @@ export interface ConflictField {
 const FIELD_LABELS: Record<string, string> = {
   name: 'Nama',
   sku: 'SKU',
-  barcode: 'Barcode',
   unit: 'Satuan',
   selling_price: 'Harga jual',
   category_id: 'Kategori',

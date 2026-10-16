@@ -20,8 +20,11 @@ export interface Category {
 export interface Product {
   id: number;
   name: string;
+  /**
+   * The product's code. SKU and barcode are the same thing here: it may be
+   * auto-generated, typed by hand, or filled from a scan.
+   */
   sku: string;
-  barcode: string | null;
   unit: string;
   selling_price: number;
   category_id: number | null;
@@ -38,10 +41,23 @@ export interface TransactionItem {
   product_id: number | null;
   product_name: string;
   sku: string | null;
-  barcode: string | null;
   unit_price: number;
   quantity: number;
   line_total: number;
+}
+
+/** How a sale was paid. */
+export type PaymentMethod = 'cash' | 'non_cash';
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: 'Tunai',
+  non_cash: 'Non Tunai',
+};
+
+export const DEFAULT_PAYMENT_METHOD: PaymentMethod = 'cash';
+
+export function paymentMethodLabel(method: PaymentMethod | undefined): string {
+  return method ? PAYMENT_METHOD_LABELS[method] : PAYMENT_METHOD_LABELS.cash;
 }
 
 export interface Transaction {
@@ -53,6 +69,7 @@ export interface Transaction {
   total: number;
   paid_amount: number;
   change_amount: number;
+  payment_method: PaymentMethod;
   items?: TransactionItem[];
   created_at: string;
 }

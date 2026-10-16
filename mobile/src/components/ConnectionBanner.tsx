@@ -14,18 +14,19 @@ const ConnectionBanner: React.FC = () => {
   return (
     <div
       role="status"
-      className="ion-padding-horizontal ion-padding-vertical"
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        background: 'var(--ion-color-warning)',
-        color: 'var(--ion-color-warning-contrast)',
-        fontSize: 14,
+        background: 'var(--app-amber-soft)',
+        color: 'var(--app-amber)',
+        fontSize: 13,
+        fontWeight: 600,
+        padding: '10px 16px',
       }}
     >
-      <IonIcon icon={cloudOfflineOutline} aria-hidden="true" />
-      <span>Offline — data mungkin tidak terbaru dan perubahan tidak dapat disimpan.</span>
+      <IonIcon icon={cloudOfflineOutline} aria-hidden="true" style={{ fontSize: 18 }} />
+      <span>Offline — data mungkin tidak terbaru dan perubahan disimpan untuk disinkron nanti.</span>
     </div>
   );
 };

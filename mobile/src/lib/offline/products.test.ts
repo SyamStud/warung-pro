@@ -26,7 +26,6 @@ const baseProduct: Product = {
   id: 5,
   name: 'Kopi Sachet',
   sku: 'PRD-000005',
-  barcode: null,
   unit: 'pcs',
   selling_price: 2000,
   category_id: null,

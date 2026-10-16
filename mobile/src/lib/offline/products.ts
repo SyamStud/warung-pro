@@ -251,7 +251,6 @@ function tempProduct(payload: ProductCreatePayload): Product {
     id: payload.tempId,
     name: input.name,
     sku: input.sku ?? 'Menunggu sinkron',
-    barcode: input.barcode ?? null,
     unit: input.unit,
     selling_price: input.selling_price,
     category_id: input.category_id ?? null,

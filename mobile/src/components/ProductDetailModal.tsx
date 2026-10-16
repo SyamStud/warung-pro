@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import {
-  IonBadge,
   IonButton,
   IonButtons,
   IonContent,
   IonHeader,
-  IonItem,
-  IonLabel,
-  IonList,
+  IonIcon,
   IonModal,
-  IonNote,
   IonSpinner,
   IonTitle,
   IonToolbar,
   useIonAlert,
 } from '@ionic/react';
+import { createOutline, trashOutline } from 'ionicons/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatRupiah } from '../lib/format';
 import { archiveProduct } from '../lib/offline/products';
@@ -89,77 +86,96 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     });
   };
 
+  const details: { label: string; value: string }[] = [
+    { label: 'SKU / Barcode', value: product.sku },
+    { label: 'Satuan', value: product.unit },
+    { label: 'Kategori', value: categoryName },
+    { label: 'Status', value: product.is_active ? 'Aktif' : 'Diarsipkan' },
+  ];
+
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader>
+      <IonHeader className="app-header">
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton onClick={onDismiss}>Tutup</IonButton>
           </IonButtons>
-          <IonTitle>Detail Produk</IonTitle>
+          <IonTitle className="app-title-bar">Detail Produk</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <h1 style={{ marginTop: 0 }}>{product.name}</h1>
-        <h2 style={{ color: 'var(--ion-color-primary)', marginTop: 0 }}>
-          {formatRupiah(product.selling_price)}
-        </h2>
-        {!product.is_active && <IonBadge color="medium">Diarsipkan</IonBadge>}
+      <IonContent>
+        <div className="screen">
+          <div className="card" style={{ textAlign: 'center' }}>
+            <span
+              className="thumb"
+              style={{ width: 72, height: 72, fontSize: 28, margin: '0 auto 12px' }}
+              aria-hidden="true"
+            >
+              {product.name.trim().charAt(0).toUpperCase() || '?'}
+            </span>
+            <h2 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700 }}>{product.name}</h2>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 24,
+                fontWeight: 800,
+                color: 'var(--app-blue)',
+              }}
+            >
+              {formatRupiah(product.selling_price)}
+            </p>
+            <p style={{ margin: '6px 0 0', color: 'var(--app-muted)', fontSize: 13 }}>
+              per {product.unit}
+            </p>
 
-        <IonList>
-          <IonItem>
-            <IonLabel>
-              <h3>SKU</h3>
-              <p>{product.sku}</p>
-            </IonLabel>
-          </IonItem>
-          <IonItem>
-            <IonLabel>
-              <h3>Barcode</h3>
-              <p>{product.barcode ?? '—'}</p>
-            </IonLabel>
-          </IonItem>
-          <IonItem>
-            <IonLabel>
-              <h3>Satuan</h3>
-              <p>{product.unit}</p>
-            </IonLabel>
-          </IonItem>
-          <IonItem>
-            <IonLabel>
-              <h3>Kategori</h3>
-              <p>{categoryName}</p>
-            </IonLabel>
-          </IonItem>
-          {product.notes && (
-            <IonItem>
-              <IonLabel>
-                <h3>Catatan</h3>
-                <p>{product.notes}</p>
-              </IonLabel>
-            </IonItem>
-          )}
-        </IonList>
+            {product.id < 0 && (
+              <p className="badge badge--amber" style={{ marginTop: 10 }}>
+                Menunggu sinkron
+              </p>
+            )}
+          </div>
 
-        {archiveError && (
-          <IonNote color="danger" className="ion-display-block ion-padding-vertical">
-            Gagal mengarsipkan produk.
-          </IonNote>
-        )}
+          <div className="card" style={{ marginTop: 12 }}>
+            {details.map((row) => (
+              <div key={row.label} className="totals__row" style={{ marginBottom: 10 }}>
+                <span>{row.label}</span>
+                <span style={{ color: 'var(--app-ink)', fontWeight: 600 }}>{row.value}</span>
+              </div>
+            ))}
 
-        <IonButton expand="block" className="ion-margin-top" onClick={() => onEdit(product)}>
-          Edit
-        </IonButton>
-        <IonButton
-          expand="block"
-          color="danger"
-          fill="outline"
-          disabled={archiving}
-          onClick={confirmArchive}
-        >
-          {archiving ? <IonSpinner name="dots" /> : isPendingCreate ? 'Batalkan draf' : 'Arsipkan'}
-        </IonButton>
+            {product.notes && (
+              <>
+                <hr className="totals__divider" />
+                <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--app-muted)' }}>
+                  {product.notes}
+                </p>
+              </>
+            )}
+          </div>
+
+          {archiveError && <p className="note note--error">Gagal mengarsipkan produk.</p>}
+
+          <button
+            type="button"
+            className="btn btn--primary"
+            style={{ marginTop: 16 }}
+            onClick={() => onEdit(product)}
+          >
+            <IonIcon icon={createOutline} /> Edit Produk
+          </button>
+
+          <button
+            type="button"
+            className="btn btn--danger"
+            style={{ marginTop: 10 }}
+            disabled={archiving}
+            onClick={confirmArchive}
+          >
+            {archiving ? <IonSpinner name="dots" /> : <IonIcon icon={trashOutline} />}
+            {archiving ? 'Memproses...' : isPendingCreate ? 'Batalkan draf' : 'Arsipkan Produk'}
+          </button>
+        </div>
       </IonContent>
     </IonModal>
   );
