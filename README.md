@@ -20,6 +20,7 @@ Warung/
 - **Mobile:** Ionic React, TypeScript, Capacitor, React Router, TanStack Query, React Hook Form, Zod
 - **Backend:** Laravel, PostgreSQL, Laravel Sanctum
 - **Hardware:** Barcode scanner (kamera), printer thermal (Bluetooth SPP / USB OTG / WiFi) dengan ESC/POS
+- **Penyimpanan aman:** token auth di Android Keystore (AES-GCM); antrean offline di SQLite
 
 ## Status
 
@@ -31,6 +32,7 @@ Warung/
 - **Phase 5 — POS:** selesai (keranjang, kuantitas, diskon, pembayaran & kembalian, transaksi atomik dengan idempotency key, snapshot item, riwayat & detail).
 - **Phase 6 — Cetak Struk:** selesai pada level kode (encoder ESC/POS 58/80 mm + transport Bluetooth/USB/WiFi + pengaturan printer + cetak uji + cetak & cetak ulang). **Verifikasi pada printer fisik masih tertunda.**
 - **Phase 7 — Stabilisasi & Rilis:** selesai pada level kode & dokumentasi (rate limiting, konfigurasi produksi, prosedur backup/restore, scaffolding signing rilis Android, checklist acceptance). **Build & uji APK release serta uji perangkat masih tertunda.**
+- **Penyimpanan token aman:** selesai (Android Keystore + AES-GCM, migrasi otomatis dari Preferences).
 
 Semua fase MVP sudah dikerjakan. Sisa pekerjaan hanya verifikasi perangkat keras/Android yang
 memerlukan SDK dan printer fisik — lihat [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md).

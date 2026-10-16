@@ -107,7 +107,7 @@ Legenda: **P0** = wajib untuk inti (katalog + price checker), **P1** = POS + cet
 
 - [x] Registrasi akun.
 - [x] Login & logout (token per perangkat).
-- [ ] Penyimpanan token aman (Capacitor Secure Storage / Keystore). *(saat ini Capacitor Preferences)*
+- [x] Penyimpanan token aman (Capacitor Secure Storage / Keystore). *Android: AES-GCM dengan kunci di Android Keystore (`@aparajita/capacitor-secure-storage`); web memakai `localStorage` (hanya untuk preview dev). Token lama di Preferences dimigrasikan otomatis.*
 - [x] Ambil profil pengguna (`GET /me`).
 - [x] Otorisasi berbasis kepemilikan data (semua query ter-scope `user_id`).
 - [x] Satu akun dipakai dari beberapa perangkat.
@@ -608,9 +608,12 @@ Gradle/Kotlin aplikasi bila ada konflik.
 - HTTPS untuk seluruh komunikasi.
 - Password di-hash aman (bcrypt/argon2).
 - Token dapat dicabut (Sanctum).
+- Token disimpan terenkripsi di perangkat: AES-GCM dengan kunci di Android Keystore
+  (`@aparajita/capacitor-secure-storage`); nilai yang tidak terbaca (mis. kunci
+  Keystore terinvalidasi) dibuang dan pengguna diminta login ulang.
 - Otorisasi berbasis pemilik data di setiap query.
 - Validasi seluruh input di backend.
-- Rate limiting endpoint auth.
+- Rate limiting endpoint auth (10/menit) dan API terautentikasi (120/menit per pengguna).
 - Tidak menyimpan secret backend di app Android.
 - Constraint DB untuk mencegah duplikasi.
 - DB transaction untuk penyimpanan transaksi.
