@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['category_id', 'name', 'sku', 'barcode', 'unit', 'selling_price', 'notes', 'is_active', 'idempotency_key'])]
+#[Fillable(['category_id', 'name', 'sku', 'unit', 'selling_price', 'notes', 'is_active', 'idempotency_key'])]
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
@@ -53,7 +53,7 @@ class Product extends Model
     }
 
     /**
-     * Match by name, SKU, or barcode using a single term.
+     * Match by name or SKU using a single term.
      */
     #[Scope]
     protected function search(Builder $query, string $term): Builder
@@ -62,8 +62,7 @@ class Product extends Model
 
         return $query->where(function (Builder $query) use ($like) {
             $query->where('name', 'like', $like)
-                ->orWhere('sku', 'like', $like)
-                ->orWhere('barcode', 'like', $like);
+                ->orWhere('sku', 'like', $like);
         });
     }
 }

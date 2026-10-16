@@ -23,15 +23,9 @@ class StoreProductRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'sku' => [
                 'nullable', 'string', 'max:255',
-                // SKU uniqueness is per owner and includes archived rows,
-                // matching the products (user_id, sku) unique index.
-                Rule::unique('products', 'sku')->where('user_id', $userId),
-            ],
-            'barcode' => [
-                'nullable', 'string', 'max:255',
-                // Barcode uniqueness ignores archived rows, matching the
-                // partial unique index.
-                Rule::unique('products', 'barcode')
+                // One code per product per owner: SKU is the scanned barcode.
+                // Archived rows are excluded, so a code can be reused.
+                Rule::unique('products', 'sku')
                     ->where('user_id', $userId)
                     ->whereNull('deleted_at'),
             ],

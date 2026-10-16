@@ -8,6 +8,8 @@ use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Services\SkuGenerator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -30,8 +32,10 @@ class ProductController extends Controller
 
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
 
+        $this->applySort($query, $request->string('sort')->trim()->toString());
+
         return ProductResource::collection(
-            $query->latest('id')->paginate($perPage)
+            $query->paginate($perPage)
         );
     }
 
@@ -52,7 +56,7 @@ class ProductController extends Controller
         }
 
         $data = $request->safe()->only([
-            'name', 'barcode', 'unit', 'selling_price', 'category_id', 'notes', 'is_active',
+            'name', 'unit', 'selling_price', 'category_id', 'notes', 'is_active',
         ]);
 
         $data['sku'] = $request->filled('sku')
@@ -83,7 +87,7 @@ class ProductController extends Controller
 
         /** @var array<string, mixed> $attributes */
         $attributes = $request->safe()->only([
-            'name', 'sku', 'barcode', 'unit', 'selling_price', 'category_id', 'notes', 'is_active',
+            'name', 'sku', 'unit', 'selling_price', 'category_id', 'notes', 'is_active',
         ]);
 
         $baseVersion = $request->filled('version') ? $request->integer('version') : null;
@@ -123,19 +127,42 @@ class ProductController extends Controller
     }
 
     /**
-     * Price-checker lookup: resolve a product from a scanned barcode.
+     * Price-checker lookup: resolve a product from a scanned code, which is the
+     * product's SKU.
      */
     public function lookup(Request $request): ProductResource
     {
-        $barcode = $request->string('barcode')->trim()->toString();
+        $sku = $request->string('sku')->trim()->toString();
 
         $product = $request->user()->products()
-            ->where('barcode', $barcode)
+            ->where('sku', $sku)
             ->first();
 
-        abort_if($product === null, 404, 'Produk dengan barcode tersebut tidak ditemukan.');
+        abort_if($product === null, 404, 'Produk dengan SKU tersebut tidak ditemukan.');
 
         return new ProductResource($product);
+    }
+
+    /**
+     * Suggest the next auto-generated SKU so the product form can offer it
+     * before saving. The value is not reserved — saving still validates it.
+     */
+    public function nextSku(SkuGenerator $skus): JsonResponse
+    {
+        return response()->json(['data' => ['sku' => $skus->peek()]]);
+    }
+
+    /**
+     * Order the catalog. `id` breaks ties so pagination stays stable.
+     */
+    private function applySort(Builder|Relation $query, string $sort): void
+    {
+        match ($sort) {
+            'name' => $query->orderBy('name')->orderBy('id'),
+            'price_asc' => $query->orderBy('selling_price')->orderBy('id'),
+            'price_desc' => $query->orderByDesc('selling_price')->orderBy('id'),
+            default => $query->orderByDesc('id'),
+        };
     }
 
     /**

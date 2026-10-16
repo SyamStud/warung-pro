@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'total',
     'paid_amount',
     'change_amount',
+    'payment_method',
     'idempotency_key',
 ])]
 class Transaction extends Model
@@ -54,5 +55,16 @@ class Transaction extends Model
     protected function forUser(Builder $query, User $user): Builder
     {
         return $query->whereBelongsTo($user);
+    }
+
+    /**
+     * Match a transaction by its number using a single term.
+     */
+    #[Scope]
+    protected function search(Builder $query, string $term): Builder
+    {
+        $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
+
+        return $query->where('transaction_number', 'like', $like);
     }
 }

@@ -28,6 +28,7 @@ class TransactionFactory extends Factory
             'total' => $subtotal,
             'paid_amount' => $paid,
             'change_amount' => $paid - $subtotal,
+            'payment_method' => 'cash',
             'idempotency_key' => null,
         ];
     }

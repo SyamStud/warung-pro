@@ -26,9 +26,10 @@ class TransactionService
         array $items,
         int $discountAmount,
         int $paidAmount,
+        string $paymentMethod,
         ?string $idempotencyKey,
     ): Transaction {
-        return DB::transaction(function () use ($user, $items, $discountAmount, $paidAmount, $idempotencyKey): Transaction {
+        return DB::transaction(function () use ($user, $items, $discountAmount, $paidAmount, $paymentMethod, $idempotencyKey): Transaction {
             $products = $user->products()
                 ->active()
                 ->whereIn('id', array_column($items, 'product_id'))
@@ -56,7 +57,6 @@ class TransactionService
                     'product_id' => $product->id,
                     'product_name' => $product->name,
                     'sku' => $product->sku,
-                    'barcode' => $product->barcode,
                     'unit_price' => $product->selling_price,
                     'quantity' => $quantity,
                     'line_total' => $lineTotal,
@@ -85,6 +85,7 @@ class TransactionService
                 'total' => $total,
                 'paid_amount' => $paidAmount,
                 'change_amount' => $paidAmount - $total,
+                'payment_method' => $paymentMethod,
                 'idempotency_key' => $idempotencyKey,
             ]);
 

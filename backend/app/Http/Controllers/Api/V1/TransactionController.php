@@ -18,8 +18,19 @@ class TransactionController extends Controller
     {
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
 
+        $query = $request->user()->transactions()->with('items');
+
+        $search = $request->string('search')->trim()->toString();
+        if ($search !== '') {
+            $query->search($search);
+        }
+
+        if ($request->filled('payment_method')) {
+            $query->where('payment_method', $request->string('payment_method')->toString());
+        }
+
         return TransactionResource::collection(
-            $request->user()->transactions()->with('items')->latest('id')->paginate($perPage)
+            $query->latest('id')->paginate($perPage)
         );
     }
 
@@ -45,6 +56,7 @@ class TransactionController extends Controller
                 $data['items'],
                 (int) ($data['discount_amount'] ?? 0),
                 (int) $data['paid_amount'],
+                $data['payment_method'] ?? 'cash',
                 $idempotencyKey,
             );
         } catch (UniqueConstraintViolationException $e) {

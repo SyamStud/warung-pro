@@ -24,7 +24,6 @@ class TransactionItemFactory extends Factory
             'product_id' => null,
             'product_name' => ucfirst(fake()->words(2, true)),
             'sku' => 'PRD-'.fake()->unique()->numerify('######'),
-            'barcode' => null,
             'unit_price' => $unitPrice,
             'quantity' => $quantity,
             'line_total' => $unitPrice * $quantity,

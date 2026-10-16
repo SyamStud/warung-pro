@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'product_id',
     'product_name',
     'sku',
-    'barcode',
     'unit_price',
     'quantity',
     'line_total',

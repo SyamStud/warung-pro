@@ -21,7 +21,6 @@ class ProductFactory extends Factory
             'category_id' => null,
             'name' => ucfirst(fake()->words(2, true)),
             'sku' => 'PRD-'.fake()->unique()->numerify('######'),
-            'barcode' => fake()->unique()->ean13(),
             'unit' => 'pcs',
             'selling_price' => fake()->numberBetween(1_000, 100_000),
             'notes' => null,
@@ -29,10 +28,10 @@ class ProductFactory extends Factory
         ];
     }
 
-    /** A product without a barcode (SKU-only). */
-    public function withoutBarcode(): static
+    /** A product whose SKU is a scanned code rather than a generated one. */
+    public function asScannedCode(): static
     {
-        return $this->state(['barcode' => null]);
+        return $this->state(['sku' => fake()->unique()->ean13()]);
     }
 
     /** An archived product. */

@@ -23,7 +23,6 @@ class TransactionItemResource extends JsonResource
             'product_id' => $this->product_id,
             'product_name' => $this->product_name,
             'sku' => $this->sku,
-            'barcode' => $this->barcode,
             'unit_price' => $this->unit_price,
             'quantity' => $this->quantity,
             'line_total' => $this->line_total,

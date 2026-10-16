@@ -25,6 +25,7 @@ class TransactionResource extends JsonResource
             'total' => $this->total,
             'paid_amount' => $this->paid_amount,
             'change_amount' => $this->change_amount,
+            'payment_method' => $this->payment_method,
             'items' => TransactionItemResource::collection($this->whenLoaded('items')),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

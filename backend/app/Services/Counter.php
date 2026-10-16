@@ -25,4 +25,12 @@ class Counter
             return (int) DB::table('counters')->where('key', $key)->value('value');
         });
     }
+
+    /**
+     * The highest value handed out so far, without reserving anything.
+     */
+    public function current(string $key): int
+    {
+        return (int) (DB::table('counters')->where('key', $key)->value('value') ?? 0);
+    }
 }

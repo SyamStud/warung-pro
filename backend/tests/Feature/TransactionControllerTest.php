@@ -177,8 +177,9 @@ class TransactionControllerTest extends TestCase
     public function test_store_snapshots_product_details(): void
     {
         $user = User::factory()->create();
-        $product = Product::factory()->for($user)->create([
+        $product = Product::factory()->for($user)->asScannedCode()->create([
             'name' => 'Kopi Susu',
+            'sku' => '7000000000019',
             'selling_price' => 4000,
         ]);
         Sanctum::actingAs($user);
@@ -194,6 +195,7 @@ class TransactionControllerTest extends TestCase
         $this->assertDatabaseHas('transaction_items', [
             'product_id' => $product->id,
             'product_name' => 'Kopi Susu',
+            'sku' => '7000000000019',
             'unit_price' => 4000,
             'quantity' => 3,
             'line_total' => 12000,
@@ -296,5 +298,87 @@ class TransactionControllerTest extends TestCase
         $this->getJson('/api/v1/transactions?per_page=5000')
             ->assertOk()
             ->assertJsonPath('meta.per_page', 100);
+    }
+
+    public function test_store_defaults_to_a_cash_payment_method(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create(['selling_price' => 4000]);
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/transactions', [
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'paid_amount' => 4000,
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.payment_method', 'cash');
+
+        $this->assertDatabaseHas('transactions', [
+            'user_id' => $user->id,
+            'payment_method' => 'cash',
+        ]);
+    }
+
+    public function test_store_records_a_non_cash_payment_method(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create(['selling_price' => 4000]);
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/transactions', [
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'paid_amount' => 4000,
+            'payment_method' => 'non_cash',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.payment_method', 'non_cash');
+
+        $this->assertDatabaseHas('transactions', [
+            'user_id' => $user->id,
+            'payment_method' => 'non_cash',
+        ]);
+    }
+
+    public function test_store_rejects_an_unknown_payment_method(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create(['selling_price' => 4000]);
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/transactions', [
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'paid_amount' => 4000,
+            'payment_method' => 'utang',
+        ])
+            ->assertStatus(422)
+            ->assertJsonStructure(['error' => ['details' => ['payment_method']]]);
+    }
+
+    public function test_index_filters_by_payment_method(): void
+    {
+        $user = User::factory()->create();
+        Transaction::factory()->for($user)->create(['payment_method' => 'cash']);
+        $nonCash = Transaction::factory()->for($user)->create(['payment_method' => 'non_cash']);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/transactions?payment_method=non_cash')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $nonCash->id);
+    }
+
+    public function test_index_searches_by_transaction_number(): void
+    {
+        $user = User::factory()->create();
+        Transaction::factory()->for($user)->create(['transaction_number' => 'TRX-20260101-0001']);
+        $wanted = Transaction::factory()->for($user)->create(['transaction_number' => 'TRX-20260101-0007']);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/transactions?search=0007')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $wanted->id);
     }
 }

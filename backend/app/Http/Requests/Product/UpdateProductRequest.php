@@ -24,11 +24,7 @@ class UpdateProductRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'sku' => [
                 'sometimes', 'string', 'max:255',
-                Rule::unique('products', 'sku')->where('user_id', $userId)->ignore($productId),
-            ],
-            'barcode' => [
-                'nullable', 'string', 'max:255',
-                Rule::unique('products', 'barcode')
+                Rule::unique('products', 'sku')
                     ->where('user_id', $userId)
                     ->whereNull('deleted_at')
                     ->ignore($productId),

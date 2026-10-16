@@ -14,12 +14,25 @@ class SkuGenerator
 
     private const PAD_LENGTH = 6;
 
+    private const COUNTER_KEY = 'product_sku';
+
     public function __construct(private readonly Counter $counter) {}
 
     public function next(): string
     {
-        $sequence = $this->counter->next('product_sku');
+        return $this->format($this->counter->next(self::COUNTER_KEY));
+    }
 
+    /**
+     * The SKU {@see next()} would produce, without consuming the sequence.
+     */
+    public function peek(): string
+    {
+        return $this->format($this->counter->current(self::COUNTER_KEY) + 1);
+    }
+
+    private function format(int $sequence): string
+    {
         return self::PREFIX.str_pad((string) $sequence, self::PAD_LENGTH, '0', STR_PAD_LEFT);
     }
 }

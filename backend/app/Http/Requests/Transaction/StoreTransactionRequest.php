@@ -32,6 +32,7 @@ class StoreTransactionRequest extends FormRequest
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
             'discount_amount' => ['sometimes', 'integer', 'min:0'],
             'paid_amount' => ['required', 'integer', 'min:0'],
+            'payment_method' => ['sometimes', 'string', Rule::in(['cash', 'non_cash'])],
         ];
     }
 
