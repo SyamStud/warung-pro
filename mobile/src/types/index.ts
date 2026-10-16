@@ -27,6 +27,8 @@ export interface Product {
   category_id: number | null;
   notes: string | null;
   is_active: boolean;
+  /** Server revision, used to detect edits made on another device. */
+  version: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -79,6 +81,10 @@ export interface ApiErrorBody {
       | 'SERVER_ERROR'
       | 'REQUEST_ERROR';
     message: string;
-    details?: Record<string, string[]>;
+    /**
+     * Validation errors map field -> messages. A `CONFLICT` carries the
+     * server's current record under `current` instead.
+     */
+    details?: Record<string, unknown>;
   };
 }

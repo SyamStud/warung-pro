@@ -225,9 +225,9 @@ const Products: React.FC = () => {
         product={editing}
         categories={categories}
         onDismiss={() => setFormOpen(false)}
-        onSaved={(message) => {
+        onSaved={(message, color) => {
           setFormOpen(false);
-          showToast(message);
+          showToast(message, color);
         }}
       />
 

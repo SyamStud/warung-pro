@@ -41,6 +41,10 @@ class UpdateProductRequest extends FormRequest
             ],
             'notes' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
+            // Optimistic concurrency: the version the edit was based on, and an
+            // explicit opt-in to overwrite a newer server version.
+            'version' => ['sometimes', 'integer', 'min:1'],
+            'force' => ['sometimes', 'boolean'],
         ];
     }
 }

@@ -105,3 +105,107 @@ describe('durable outbox', () => {
     expect(outbox.list()).toHaveLength(0);
   });
 });
+
+function updateItem(id = 'update-1'): OutboxItem {
+  return {
+    id,
+    type: 'product.update',
+    payload: { id: 7, input: { selling_price: 9000 }, baseVersion: 1 },
+    createdAt: '2026-01-01T00:00:00.000Z',
+    attempts: 0,
+    status: 'pending',
+    lastError: null,
+  };
+}
+
+const serverProduct = {
+  id: 7,
+  name: 'Kopi Sachet',
+  sku: 'PRD-000007',
+  barcode: null,
+  unit: 'pcs',
+  selling_price: 4500,
+  category_id: null,
+  notes: null,
+  is_active: true,
+  version: 2,
+};
+
+function conflictError(): ApiError {
+  return new ApiError(409, 'CONFLICT', 'Produk ini sudah diubah di perangkat lain.', {
+    current: serverProduct,
+  });
+}
+
+describe('multi-device conflicts', () => {
+  test('parks a conflicting update instead of overwriting it', async () => {
+    execute.mockRejectedValue(conflictError());
+    await outbox.enqueue(updateItem());
+
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(outbox.conflictCount).toBe(1));
+
+    expect(outbox.pendingCount).toBe(0);
+    expect(outbox.failedCount).toBe(0);
+
+    const parked = outbox.list()[0];
+    expect(parked.status).toBe('conflict');
+    expect((parked.payload as { conflict?: { version: number } }).conflict?.version).toBe(2);
+    expect(await new LocalOutboxStore().all()).toHaveLength(1);
+  });
+
+  test('does not retry a conflicted write until the user decides', async () => {
+    execute.mockRejectedValue(conflictError());
+    await outbox.enqueue(updateItem());
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(outbox.conflictCount).toBe(1));
+
+    execute.mockClear();
+    await outbox.flush();
+
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  test('resolves in favour of the server by dropping the local edit', async () => {
+    execute.mockRejectedValue(conflictError());
+    await outbox.enqueue(updateItem());
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(outbox.conflictCount).toBe(1));
+
+    await outbox.resolveConflictKeepServer('update-1');
+
+    expect(outbox.list()).toHaveLength(0);
+    expect(await new LocalOutboxStore().all()).toHaveLength(0);
+  });
+
+  test('resolves in favour of this device by resending the edit with force', async () => {
+    execute.mockRejectedValueOnce(conflictError());
+    await outbox.enqueue(updateItem());
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(outbox.conflictCount).toBe(1));
+
+    execute.mockResolvedValue(undefined);
+    await outbox.resolveConflictKeepMine('update-1');
+
+    expect(outbox.list()).toHaveLength(0);
+    const resent = execute.mock.calls.at(-1)?.[0] as OutboxItem;
+    expect((resent.payload as { force?: boolean }).force).toBe(true);
+  });
+
+  test('keeps flushing later writes while one item is conflicted', async () => {
+    execute.mockImplementation((item: OutboxItem) =>
+      item.type === 'product.update'
+        ? Promise.reject(conflictError())
+        : Promise.resolve(undefined),
+    );
+
+    await outbox.enqueue(updateItem('update-1'));
+    await outbox.enqueue(createItem('create-2'));
+
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(outbox.conflictCount).toBe(1));
+
+    expect(outbox.list()).toHaveLength(1);
+    expect(outbox.list()[0].id).toBe('update-1');
+  });
+});

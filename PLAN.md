@@ -175,6 +175,9 @@ Legenda: **P0** = wajib untuk inti (katalog + price checker), **P1** = POS + cet
 
 SQLite cache persisten · pencarian offline · antrean transaksi offline · retry/sync otomatis · resolusi konflik · backup/restore terjadwal.
 
+**Sudah dikerjakan:** resolusi konflik multi-perangkat (§9.2).
+**Belum:** SQLite cache katalog persisten, pencarian offline penuh, antrean transaksi offline, backup/restore terjadwal.
+
 ---
 
 ## 4. Layar Aplikasi
@@ -243,6 +246,8 @@ Constraint: `UNIQUE (user_id, name)`.
 | selling_price | BIGINT | Harga jual (rupiah, integer) |
 | notes | TEXT, NULL | Catatan |
 | is_active | BOOLEAN | Status produk |
+| idempotency_key | VARCHAR, NULL | Kunci anti-duplikat `POST /products` |
+| version | BIGINT | Revisi baris untuk deteksi konflik (mulai 1) |
 | created_at / updated_at | TIMESTAMP | |
 | deleted_at | TIMESTAMP, NULL | Soft delete |
 
@@ -252,6 +257,7 @@ Constraint: `UNIQUE (user_id, name)`.
 - `UNIQUE (user_id, barcode)` untuk barcode **non-NULL** (partial unique index di PostgreSQL).
 - Produk tanpa barcode tetap valid.
 - `selling_price >= 0` (check constraint).
+- `version` naik 1 setiap update dan dipakai untuk optimistic concurrency (§9.2).
 - Produk yang sudah dipakai transaksi **diarsipkan**, bukan dihapus permanen.
 - Index: `name`, `sku`, `barcode`.
 
@@ -423,6 +429,40 @@ Content-Type: application/json
 }
 ```
 
+**Concurrent edit of a product (optimistic concurrency)**
+
+```http
+PATCH /api/v1/products/42
+Content-Type: application/json
+
+{
+  "selling_price": 9000,
+  "version": 3
+}
+```
+
+```json
+409 Conflict
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "Produk ini sudah diubah di perangkat lain.",
+    "details": {
+      "current": {
+        "id": 42,
+        "name": "Air Mineral 600ml",
+        "selling_price": 4500,
+        "version": 5
+      }
+    }
+  }
+}
+```
+
+`version` yang dikirim adalah revisi yang menjadi dasar edit. Bila server sudah
+lebih baru dan nilainya berbeda, perubahan **tidak** ditimpa; client meminta
+pengguna memilih. Kirim `"force": true` untuk menimpa dengan sengaja (§9.2).
+
 **Format error konsisten**
 
 ```json
@@ -435,7 +475,7 @@ Content-Type: application/json
 }
 ```
 
-Kode error: `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT` (duplikat), `RATE_LIMITED`, `SERVER_ERROR`.
+Kode error: `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT` (duplikat SKU/barcode **atau** versi baris yang sudah bergerak), `RATE_LIMITED`, `SERVER_ERROR`.
 
 ### 6.6 API Rules
 
@@ -524,7 +564,37 @@ Meski pendekatan utama online-first, perubahan katalog yang gagal terkirim tetap
 - Item yang ditolak server (4xx) ditandai **gagal** — dapat dicoba ulang atau dibuang; tidak di-retry buta.
 - **Transaksi POS tidak diantrekan offline**: checkout butuh koneksi karena harga/total dihitung server (menghindari selisih bila harga berubah saat offline).
 
-**Masih Pasca-MVP (P2):** SQLite cache katalog persisten, pencarian offline penuh, antrean transaksi offline, resolusi konflik multi-perangkat, backup/restore.
+**Masih Pasca-MVP (P2):** SQLite cache katalog persisten, pencarian offline penuh, antrean transaksi offline, backup/restore.
+
+### 9.2 Resolusi Konflik Multi-Perangkat (P2) — *diterapkan di Phase 8*
+
+Dua perangkat dapat mengedit produk yang sama. Tanpa penjagaan, device B menimpa
+perubahan device A tanpa jejak (*lost update*). MVP memakai **optimistic concurrency**:
+
+- Setiap baris `products` punya kolom `version` (mulai 1, naik 1 setiap update).
+- Client **wajib** mengirim `version` yang menjadi dasar edit (`PATCH /products/{id}`).
+  Bila versi server sudah lebih baru **dan** nilainya berbeda → `409 CONFLICT`
+  dengan baris server terkini di `error.details.current`.
+- Bila versi beda tetapi **nilai yang diminta sudah sama** dengan server, request
+  dianggap berhasil (`200`) tanpa menaikkan versi. Ini membuat **retry karena
+  response hilang** tidak salah dilaporkan sebagai konflik.
+- Client dapat memaksa menang dengan `force: true` (dipakai saat pengguna memilih
+  "Simpan milik saya").
+- Tanpa `version` (mis. tooling lama), update tetap berlaku seperti sebelumnya.
+
+Alur di aplikasi:
+
+1. Simpan saat online dengan versi basi → `409` → perubahan **diparkir** di outbox
+   dengan status `conflict` (tetap durable, ikut selamat dari restart).
+2. Ikon sinkronisasi di header memerah; tombol **Tinjau bentrok** membuka
+   perbandingan per-field (nilai server vs nilai saya).
+3. Pengguna memilih **Pakai versi server** (buang edit lokal, refetch) atau
+   **Simpan milik saya** (kirim ulang dengan `force: true`).
+4. Item `conflict` **tidak** di-retry otomatis sampai pengguna memutuskan, agar
+   perubahan perangkat lain tidak hilang diam-diam.
+
+> Mengganti keputusan desain lain? Tidak. Snapshot transaksi & harga
+> server-authoritative (§8) tetap utuh: aturan ini hanya untuk katalog.
 
 ---
 
@@ -632,6 +702,8 @@ Gradle/Kotlin aplikasi bila ada konflik.
 - Validasi harga & kuantitas.
 - Validasi duplikat SKU/barcode.
 - Format data struk.
+- Optimistic concurrency (versi basi, retry tanpa konflik, `force`).
+- Perbandingan konflik per-field & resolusi item yang diparkir.
 
 ### 12.2 API / Feature Tests
 
@@ -642,6 +714,7 @@ Gradle/Kotlin aplikasi bila ada konflik.
 - Otorisasi lintas akun (user A tidak bisa akses data user B).
 - Pembuatan transaksi + snapshot harga.
 - Idempotensi transaksi (request ganda → satu transaksi).
+- Konflik versi produk lintas perangkat (`409` + `error.details.current`, `force` menimpa).
 - Penanganan request tidak valid.
 
 ### 12.3 Android Integration Tests
@@ -664,10 +737,13 @@ Gradle/Kotlin aplikasi bila ada konflik.
 - [x] Riwayat tetap konsisten walau harga produk berubah — snapshot nama/harga teruji.
 - [x] Format data struk — layout 58 mm (32 kolom) & 80 mm (48 kolom), pembungkusan, dan perataan harga teruji.
 - [x] Rate limit endpoint auth — `429 RATE_LIMITED` setelah 10 percobaan.
+- [x] Edit produk yang bentrok tidak menimpa data perangkat lain — `409 CONFLICT` + baris server terkini, retry tanpa konflik, dan `force` teruji (backend & mobil).
+- [x] Item yang bentrok diantrekan (bukan hilang) dan dapat diselesaikan per-field — status `conflict` + model perbandingan teruji.
 
 **Menunggu verifikasi perangkat fisik** (lihat §10.5 & [docs/RELEASE-ANDROID.md](../docs/RELEASE-ANDROID.md)):
 
 - [ ] Produk yang diperbarui terlihat dari perangkat lain (uji dua perangkat).
+- [ ] Dua perangkat mengedit produk yang sama → dialog "Perubahan Bentrok" muncul dan pilihan "Pakai versi server"/"Simpan milik saya" berjalan.
 - [ ] Struk tercetak pada printer yang didukung (Bluetooth / USB OTG / WiFi).
 - [ ] Kegagalan printer tidak menghilangkan transaksi (matikan printer saat mencetak).
 - [ ] Pemindaian kamera nyata dan perilaku izin kamera.
@@ -719,8 +795,8 @@ Jalankan semua test, uji end-to-end, uji keamanan/isolasi data, uji jaringan lam
 
 Yang sudah dikerjakan di Phase 7:
 
-- **Test:** 50 test backend (isolasi kategori/produk/transaksi/struk, idempotensi, snapshot, rate limit)
-  dan 24 test mobile; Pint, ESLint, `tsc`, dan build produksi bersih.
+- **Test:** 56 test backend (isolasi kategori/produk/transaksi/struk, idempotensi, snapshot,
+  rate limit, konflik versi) dan 40 test mobile; Pint, ESLint, `tsc`, dan build produksi bersih.
 - **Keamanan:** rate limit `auth` (10/menit) dan API terautentikasi (120/menit per pengguna);
   amplop error konsisten; isolasi data teruji lintas akun.
 - **Konfigurasi produksi:** `.env.example` produksi (PostgreSQL, `APP_DEBUG=false`, HTTPS),
@@ -731,6 +807,13 @@ Yang sudah dikerjakan di Phase 7:
   `versionCode`/`versionName`, dan checklist verifikasi perangkat di
   [docs/RELEASE-ANDROID.md](../docs/RELEASE-ANDROID.md).
 
+### Phase 8 — Resolusi Konflik Multi-Perangkat (P2)
+
+Kolom `version` pada `products`, deteksi konflik optimistis pada `PATCH /products/{id}`
+(`409 CONFLICT` + baris server terkini), pengecualian retry tanpa konflik, `force` untuk
+"simpan milik saya", status `conflict` pada outbox, dan dialog perbandingan per-field
+("Perubahan Bentrok") di header aplikasi.
+**Deliverable:** edit dari dua perangkat tidak saling menimpa diam-diam; pengguna memilih pemenangnya. *(selesai)*
 
 ### Ketergantungan antar-Phase
 
@@ -738,7 +821,7 @@ Yang sudah dikerjakan di Phase 7:
 P1 ──▶ P2 ──▶ P3 ──▶ P4
                      │
                      ▼
-                    P5 ──▶ P6 ──▶ P7
+                    P5 ──▶ P6 ──▶ P7 ──▶ P8 (P2)
 ```
 
 > **Checkpoint:** Jangan mulai P5 (POS) sebelum P3 (Price Checker) stabil dan teruji di perangkat fisik.
@@ -754,6 +837,7 @@ P1 ──▶ P2 ──▶ P3 ──▶ P4
 | Barcode duplikat lintas input | Data kotor | Partial unique index + validasi backend |
 | Kualitas kamera/barcode sulit | UX buruk | Mode input manual sebagai fallback |
 | Koneksi tidak stabil | Data terlihat "tersimpan" padahal tidak | Error eksplisit + TanStack Query retry + indikator status |
+| Dua perangkat mengedit produk yang sama | Perubahan hilang tanpa jejak | Kolom `version` + `409 CONFLICT` + dialog resolusi eksplisit (§9.2) |
 | Scope creep (stok, dll.) | MVP tidak selesai | Tegakkan Non-Goals §1.3 |
 
 ---

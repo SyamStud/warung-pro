@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { productsApi, type ProductInput } from '../../api/products';
 import type { Product } from '../../types';
-import { ApiError } from '../http';
+import { ApiError, conflictRecord } from '../http';
 import { outbox } from './outbox';
 import type {
   OutboxItem,
@@ -64,14 +64,21 @@ function findQueuedArchive(id: number): OutboxItem | undefined {
 }
 
 /**
+ * Outcome of a save. `conflict` means another device changed the same product
+ * first, so the write was parked in the outbox for the user to resolve.
+ */
+export type SaveResult = 'saved' | 'queued' | 'conflict';
+
+/**
  * Create or update a product. Sends immediately when online; otherwise (or on a
  * network failure) the write is queued durably and reported as `queued`.
- * Validation errors (4xx) still throw so the form can show them.
+ * Validation errors (4xx) still throw so the form can show them, while a
+ * concurrent edit on another device is reported as `conflict`.
  */
 export async function saveProduct(
   existing: Product | null,
   input: ProductInput,
-): Promise<'saved' | 'queued'> {
+): Promise<SaveResult> {
   // Editing a product that has not reached the server yet.
   if (existing && existing.id < 0) {
     const queued = findQueuedCreate(existing.id);
@@ -86,10 +93,18 @@ export async function saveProduct(
 
   if (onlineManager.isOnline()) {
     try {
-      if (existing) await productsApi.update(existing.id, input);
-      else await productsApi.create(input, uuid());
+      if (existing) {
+        await productsApi.update(existing.id, input, { version: existing.version });
+      } else {
+        await productsApi.create(input, uuid());
+      }
       return 'saved';
     } catch (error) {
+      if (error instanceof ApiError && error.code === 'CONFLICT' && existing) {
+        await enqueueConflict(existing, input, error);
+        return 'conflict';
+      }
+
       if (!(error instanceof ApiError && error.code === 'NETWORK_ERROR')) throw error;
     }
   }
@@ -98,20 +113,59 @@ export async function saveProduct(
   return 'queued';
 }
 
+/** Park an edit that collided with a change made on another device. */
+async function enqueueConflict(
+  existing: Product,
+  input: ProductInput,
+  error: ApiError,
+): Promise<void> {
+  const queued = findQueuedUpdate(existing.id);
+
+  await outbox.enqueue({
+    id: queued?.id ?? uuid(),
+    type: 'product.update',
+    payload: {
+      id: existing.id,
+      input,
+      baseVersion: existing.version,
+      conflict: conflictRecord<Product>(error) ?? undefined,
+    },
+    createdAt: queued?.createdAt ?? new Date().toISOString(),
+    attempts: 0,
+    status: 'conflict',
+    lastError: error.message,
+  });
+}
+
 async function enqueueSave(existing: Product | null, input: ProductInput): Promise<void> {
   if (existing) {
     const queued = findQueuedUpdate(existing.id);
     if (queued) {
+      const payload = queued.payload as ProductUpdatePayload;
       await outbox.enqueue({
         ...queued,
+        // A fresh edit re-checks against the server rather than reusing an
+        // earlier "keep mine" decision.
+        status: 'pending',
+        lastError: null,
         payload: {
-          id: existing.id,
-          input: { ...(queued.payload as ProductUpdatePayload).input, ...input },
+          ...payload,
+          input: { ...payload.input, ...input },
+          baseVersion: payload.baseVersion ?? existing.version,
+          conflict: undefined,
+          force: false,
         },
       });
       return;
     }
-    await outbox.enqueue(makeItem('product.update', { id: existing.id, input }));
+
+    await outbox.enqueue(
+      makeItem('product.update', {
+        id: existing.id,
+        input,
+        baseVersion: existing.version,
+      }),
+    );
     return;
   }
 
@@ -203,5 +257,6 @@ function tempProduct(payload: ProductCreatePayload): Product {
     category_id: input.category_id ?? null,
     notes: input.notes ?? null,
     is_active: input.is_active ?? true,
+    version: 0,
   };
 }

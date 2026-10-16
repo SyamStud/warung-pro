@@ -19,6 +19,7 @@ function product(id: number, price: number, name = `Produk ${id}`): Product {
     category_id: null,
     notes: null,
     is_active: true,
+    version: 1,
   };
 }
 

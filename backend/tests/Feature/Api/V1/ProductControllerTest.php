@@ -158,6 +158,114 @@ class ProductControllerTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id, 'selling_price' => 5500]);
     }
 
+    public function test_update_starts_at_version_one_and_increments(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create();
+        Sanctum::actingAs($user);
+
+        $this->getJson("/api/v1/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('data.version', 1);
+
+        $this->patchJson("/api/v1/products/{$product->id}", ['selling_price' => 5500])
+            ->assertOk()
+            ->assertJsonPath('data.version', 2);
+
+        $this->patchJson("/api/v1/products/{$product->id}", ['selling_price' => 6000])
+            ->assertOk()
+            ->assertJsonPath('data.version', 3);
+    }
+
+    public function test_update_rejects_a_stale_version_as_a_conflict(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create(['selling_price' => 4000]);
+        Sanctum::actingAs($user);
+
+        // Another device moves the row to version 2.
+        $this->patchJson("/api/v1/products/{$product->id}", ['selling_price' => 4500])->assertOk();
+
+        $this->patchJson("/api/v1/products/{$product->id}", [
+            'selling_price' => 9000,
+            'version' => 1,
+        ])
+            ->assertStatus(409)
+            ->assertJsonPath('error.code', 'CONFLICT')
+            ->assertJsonPath('error.details.current.version', 2)
+            ->assertJsonPath('error.details.current.selling_price', 4500);
+
+        // The stale write did not land.
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'selling_price' => 4500]);
+    }
+
+    public function test_update_with_a_stale_version_but_identical_values_is_not_a_conflict(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create(['selling_price' => 4000]);
+        Sanctum::actingAs($user);
+
+        // The first write lands but its response is lost; the client retries.
+        $this->patchJson("/api/v1/products/{$product->id}", [
+            'selling_price' => 4500,
+            'version' => 1,
+        ])->assertOk()->assertJsonPath('data.version', 2);
+
+        $this->patchJson("/api/v1/products/{$product->id}", [
+            'selling_price' => 4500,
+            'version' => 1,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.selling_price', 4500)
+            ->assertJsonPath('data.version', 2);
+    }
+
+    public function test_update_can_force_overwrite_a_newer_version(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create(['selling_price' => 4000]);
+        Sanctum::actingAs($user);
+
+        $this->patchJson("/api/v1/products/{$product->id}", ['selling_price' => 4500])->assertOk();
+
+        $this->patchJson("/api/v1/products/{$product->id}", [
+            'selling_price' => 9000,
+            'version' => 1,
+            'force' => true,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.selling_price', 9000);
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'selling_price' => 9000]);
+    }
+
+    public function test_update_without_a_version_still_applies(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create(['selling_price' => 4000]);
+        Sanctum::actingAs($user);
+
+        $this->patchJson("/api/v1/products/{$product->id}", ['selling_price' => 5500])
+            ->assertOk()
+            ->assertJsonPath('data.selling_price', 5500);
+    }
+
+    public function test_update_ignores_unknown_concurrency_fields(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->for($user)->create(['selling_price' => 4000]);
+        Sanctum::actingAs($user);
+
+        $this->patchJson("/api/v1/products/{$product->id}", [
+            'selling_price' => 5500,
+            'version' => 1,
+            'force' => true,
+        ])->assertOk();
+
+        // `version` and `force` are control fields, never columns to write.
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'version' => 2]);
+    }
+
     public function test_destroy_archives_the_product_without_removing_the_row(): void
     {
         $user = User::factory()->create();

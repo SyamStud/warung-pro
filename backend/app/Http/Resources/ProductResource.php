@@ -26,6 +26,7 @@ class ProductResource extends JsonResource
             'category_id' => $this->category_id,
             'notes' => $this->notes,
             'is_active' => $this->is_active,
+            'version' => $this->version,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

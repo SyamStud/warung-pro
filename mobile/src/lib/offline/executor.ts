@@ -9,7 +9,8 @@ import type {
 
 /**
  * Perform the queued write against the API. Throwing keeps the item in the
- * queue; returning resolves it.
+ * queue; returning resolves it. A 409 CONFLICT propagates to the outbox, which
+ * parks the item for the user to resolve.
  */
 export async function executeOutboxItem(item: OutboxItem): Promise<void> {
   switch (item.type) {
@@ -20,7 +21,10 @@ export async function executeOutboxItem(item: OutboxItem): Promise<void> {
     }
     case 'product.update': {
       const payload = item.payload as ProductUpdatePayload;
-      await productsApi.update(payload.id, payload.input);
+      await productsApi.update(payload.id, payload.input, {
+        version: payload.force ? undefined : payload.baseVersion,
+        force: payload.force,
+      });
       return;
     }
     case 'product.archive': {

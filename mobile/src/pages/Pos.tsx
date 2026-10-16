@@ -36,7 +36,7 @@ import PrinterSettingsModal from '../components/PrinterSettingsModal';
 import ProductFormModal from '../components/ProductFormModal';
 import ReceiptPreviewModal from '../components/ReceiptPreviewModal';
 import { formatRupiah } from '../lib/format';
-import { ApiError } from '../lib/http';
+import { ApiError, describeDetails } from '../lib/http';
 import { categoryKeys, productKeys, transactionKeys } from '../lib/queryKeys';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useReceiptPrinter } from '../hooks/useReceiptPrinter';
@@ -177,9 +177,7 @@ const Pos: React.FC = () => {
     } catch (error) {
       const message =
         error instanceof ApiError
-          ? error.details
-            ? Object.values(error.details).flat().join(' ')
-            : error.message
+          ? (describeDetails(error.details) ?? error.message)
           : 'Gagal menyimpan transaksi.';
       presentAlert({ header: 'Transaksi gagal', message, buttons: ['OK'] });
     } finally {
@@ -432,9 +430,9 @@ const Pos: React.FC = () => {
         initialBarcode={formBarcode}
         categories={categories}
         onDismiss={() => setFormOpen(false)}
-        onSaved={(message) => {
+        onSaved={(message, color) => {
           setFormOpen(false);
-          showToast(message);
+          showToast(message, color);
           void queryClient.invalidateQueries({ queryKey: productKeys.all });
         }}
       />

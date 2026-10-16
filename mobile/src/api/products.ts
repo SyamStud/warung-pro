@@ -19,6 +19,14 @@ export interface ProductQuery {
   per_page?: number;
 }
 
+/** Optimistic-concurrency controls for an update. */
+export interface ProductUpdateOptions {
+  /** The `version` the edit was based on; a mismatch yields 409 CONFLICT. */
+  version?: number;
+  /** Overwrite a newer server version instead of reporting a conflict. */
+  force?: boolean;
+}
+
 function toQueryString(query: ProductQuery): string {
   const params = new URLSearchParams();
   if (query.search) params.set('search', query.search);
@@ -42,8 +50,8 @@ export const productsApi = {
   create: (input: ProductInput, idempotencyKey?: string) =>
     api.post<{ data: Product }>('/products', input, idempotencyKey),
 
-  update: (id: number, input: Partial<ProductInput>) =>
-    api.patch<{ data: Product }>(`/products/${id}`, input),
+  update: (id: number, input: Partial<ProductInput>, options: ProductUpdateOptions = {}) =>
+    api.patch<{ data: Product }>(`/products/${id}`, { ...input, ...options }),
 
   archive: (id: number) => api.delete<void>(`/products/${id}`),
 };

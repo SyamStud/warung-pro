@@ -33,6 +33,9 @@ Warung/
 - **Phase 6 — Cetak Struk:** selesai pada level kode (encoder ESC/POS 58/80 mm + transport Bluetooth/USB/WiFi + pengaturan printer + cetak uji + cetak & cetak ulang). **Verifikasi pada printer fisik masih tertunda.**
 - **Phase 7 — Stabilisasi & Rilis:** selesai pada level kode & dokumentasi (rate limiting, konfigurasi produksi, prosedur backup/restore, scaffolding signing rilis Android, checklist acceptance). **Build & uji APK release serta uji perangkat masih tertunda.**
 - **Penyimpanan token aman:** selesai (Android Keystore + AES-GCM, migrasi otomatis dari Preferences).
+- **Phase 8 — Resolusi Konflik Multi-Perangkat (P2):** selesai pada level kode & test (kolom
+  `version`, `409 CONFLICT` + baris server terkini, item bentrok diparkir di antrean, dialog
+  perbandingan per-field). **Uji dua perangkat masih tertunda.**
 
 Semua fase MVP sudah dikerjakan. Sisa pekerjaan hanya verifikasi perangkat keras/Android yang
 memerlukan SDK dan printer fisik — lihat [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md).
@@ -60,8 +63,20 @@ Perubahan katalog (tambah/edit/arsip produk) bersifat **online-first** namun tah
 - Perubahan yang menunggu langsung terlihat di daftar (overlay optimistis, badge **Menunggu**).
 - Indikator awan di header menampilkan jumlah perubahan tertunda; item yang ditolak server (4xx) ditandai **gagal** dan bisa dicoba ulang atau dibuang.
 
-> Ditunda (di luar MVP): merge/penanganan konflik multi-perangkat untuk perubahan yang sama.
+## Resolusi Konflik Multi-Perangkat
 
+Bila produk yang sama diubah dari dua perangkat, perubahan **tidak** saling menimpa diam-diam:
+
+- Server menyimpan revisi tiap produk (`version`). Aplikasi mengirim versi yang menjadi
+  dasar edit; bila server sudah lebih baru, API menjawab `409 CONFLICT` beserta baris terkini.
+- Percobaan ulang yang sebenarnya sudah berhasil (mis. response hilang) **tidak** dilaporkan
+  sebagai konflik — nilainya sudah sama, jadi server menganggapnya berhasil.
+- Perubahan yang bentrok **diparkir** di antrean perangkat (status konflik), bukan hilang.
+  Indikator awan di header memerah dan tombol **Tinjau bentrok** membuka perbandingan per-field.
+- Pengguna memilih **Pakai versi server** (buang edit lokal) atau **Simpan milik saya**
+  (kirim ulang dengan `force`).
+
+> Snapshot transaksi dan perhitungan harga di server tidak berubah: aturan ini hanya untuk katalog.
 
 > Pemindaian kamera hanya aktif di aplikasi Android (`npx cap run android`).
 > Di preview browser, tombol pindai menampilkan pesan agar pengguna memakai input manual.
@@ -118,7 +133,7 @@ Base URL: `/api/v1`. Endpoint yang sudah tersedia:
 | GET | `/products` | Daftar & pencarian produk |
 | POST | `/products` | Membuat produk (SKU otomatis bila kosong; mendukung header `Idempotency-Key`) |
 | GET | `/products/{id}` | Detail produk |
-| PATCH | `/products/{id}` | Update produk |
+| PATCH | `/products/{id}` | Update produk (kirim `version` untuk deteksi konflik; `409` + `force` bila bentrok) |
 | DELETE | `/products/{id}` | Arsipkan produk |
 | GET | `/products/lookup?barcode=` | Lookup barcode |
 | GET | `/categories` | Daftar kategori |

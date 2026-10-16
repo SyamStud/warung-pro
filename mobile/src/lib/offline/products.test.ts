@@ -1,7 +1,26 @@
-import { expect, test } from 'vitest';
-import { applyOverlay, buildOverlay } from './products';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { onlineManager } from '@tanstack/react-query';
+import { ApiError } from '../http';
+import { LocalOutboxStore } from './store.local';
+import type { ProductUpdatePayload } from './types';
+import { applyOverlay, buildOverlay, saveProduct } from './products';
 import type { OutboxItem } from './types';
 import type { Product } from '../../types';
+
+const { updateApi } = vi.hoisted(() => ({ updateApi: vi.fn() }));
+
+vi.mock('../../api/products', () => ({
+  productsApi: {
+    list: vi.fn(),
+    get: vi.fn(),
+    create: vi.fn(),
+    update: (id: number, input: unknown, options: unknown) => updateApi(id, input, options),
+    archive: vi.fn(),
+  },
+}));
+
+// Imported after the mock so the outbox flushes through the stubbed API.
+const { outbox } = await import('./outbox');
 
 const baseProduct: Product = {
   id: 5,
@@ -13,6 +32,7 @@ const baseProduct: Product = {
   category_id: null,
   notes: null,
   is_active: true,
+  version: 1,
 };
 
 function createItem(): OutboxItem {
@@ -71,4 +91,63 @@ test('a createdFilter can restrict which queued products appear', () => {
   const visible = applyOverlay([], overlay, () => false);
 
   expect(visible).toHaveLength(0);
+});
+
+describe('saveProduct against a concurrent edit', () => {
+  beforeEach(() => {
+    globalThis.localStorage.clear();
+    updateApi.mockReset();
+    onlineManager.setOnline(false);
+  });
+
+  afterEach(() => onlineManager.setOnline(true));
+
+  test('sends the version the edit was based on while online', async () => {
+    onlineManager.setOnline(true);
+    updateApi.mockResolvedValue({ data: baseProduct });
+    const edit = { name: 'Kopi Sachet', unit: 'pcs', selling_price: 5000 };
+
+    const result = await saveProduct(baseProduct, edit);
+
+    expect(result).toBe('saved');
+    expect(updateApi).toHaveBeenCalledWith(5, edit, { version: 1 });
+    expect(outbox.list()).toHaveLength(0);
+  });
+
+  test('parks the edit when another device changed the product first', async () => {
+    onlineManager.setOnline(true);
+    const serverRow = { ...baseProduct, selling_price: 4500, version: 3 };
+    updateApi.mockRejectedValue(
+      new ApiError(409, 'CONFLICT', 'Produk ini sudah diubah di perangkat lain.', {
+        current: serverRow,
+      }),
+    );
+    const edit = { name: 'Kopi Sachet', unit: 'pcs', selling_price: 9000 };
+
+    const result = await saveProduct(baseProduct, edit);
+
+    expect(result).toBe('conflict');
+
+    const expecting: OutboxItem[] = await new LocalOutboxStore().all();
+    expect(expecting).toHaveLength(1);
+    expect(expecting[0].status).toBe('conflict');
+
+    const payload = expecting[0].payload as ProductUpdatePayload;
+    expect(payload.input).toEqual(edit);
+    expect(payload.baseVersion).toBe(1);
+    expect(payload.conflict?.version).toBe(3);
+  });
+
+  test('still queues the edit when the network drops mid-save', async () => {
+    updateApi.mockRejectedValue(new ApiError(0, 'NETWORK_ERROR', 'Tidak dapat terhubung.'));
+
+    const result = await saveProduct(baseProduct, {
+      name: 'Kopi Sachet',
+      unit: 'pcs',
+      selling_price: 9000,
+    });
+
+    expect(result).toBe('queued');
+    expect(outbox.pendingCount).toBe(1);
+  });
 });

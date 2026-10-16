@@ -256,9 +256,9 @@ const PriceChecker: React.FC = () => {
         initialBarcode={formBarcode}
         categories={categories}
         onDismiss={() => setFormOpen(false)}
-        onSaved={(message) => {
+        onSaved={(message, color) => {
           setFormOpen(false);
-          showToast(message);
+          showToast(message, color);
         }}
       />
     </IonPage>

@@ -1,19 +1,37 @@
 import { onlineManager } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import { ApiError } from '../http';
+import { ApiError, conflictRecord } from '../http';
 import { productKeys } from '../queryKeys';
+import type { Product } from '../../types';
 import { executeOutboxItem } from './executor';
 import { getOutboxStore } from './store';
-import type { OutboxItem } from './types';
+import type { OutboxItem, ProductUpdatePayload } from './types';
 
 type Listener = () => void;
+
+/**
+ * Attach the server's current row to a conflicted update so the UI can show a
+ * side-by-side comparison.
+ */
+function withConflict(
+  payload: OutboxItem['payload'],
+  error: ApiError,
+): OutboxItem['payload'] {
+  if (!('input' in payload)) return payload;
+
+  return {
+    ...(payload as ProductUpdatePayload),
+    conflict: conflictRecord<Product>(error) ?? undefined,
+  };
+}
 
 /**
  * Durable write queue with automatic flush.
  *
  * Items are persisted before the UI reports success, so a change survives app
  * restarts. Flushing stops on a network failure and resumes when the device
- * reconnects; a 4xx response marks the item as failed for the user to resolve.
+ * reconnects; a 4xx response marks the item as failed, while a 409 CONFLICT
+ * parks it until the user picks between their edit and the server's.
  */
 class Outbox {
   private listeners = new Set<Listener>();
@@ -49,6 +67,10 @@ class Outbox {
 
   get failedCount(): number {
     return this.items.filter((item) => item.status === 'failed').length;
+  }
+
+  get conflictCount(): number {
+    return this.items.filter((item) => item.status === 'conflict').length;
   }
 
   get isFlushing(): boolean {
@@ -99,6 +121,35 @@ class Outbox {
     this.invalidate();
   }
 
+  /**
+   * Resolve a conflict in favour of the server: drop the local edit and let the
+   * refetch show the row another device wrote.
+   */
+  async resolveConflictKeepServer(id: string): Promise<void> {
+    await this.remove(id);
+  }
+
+  /**
+   * Resolve a conflict in favour of the local edit: resend it with `force`, so
+   * the server accepts it even though its version moved on.
+   */
+  async resolveConflictKeepMine(id: string): Promise<void> {
+    const item = this.items.find((entry) => entry.id === id);
+    if (!item) return;
+
+    const resolved: OutboxItem = {
+      ...item,
+      status: 'pending',
+      lastError: null,
+      payload: { ...(item.payload as ProductUpdatePayload), force: true, conflict: undefined },
+    };
+
+    await (await getOutboxStore()).put(resolved);
+    this.items = this.items.map((entry) => (entry.id === id ? resolved : entry));
+    this.emit();
+    await this.flush();
+  }
+
   async flush(): Promise<void> {
     if (this.flushing || !onlineManager.isOnline()) return;
 
@@ -110,7 +161,8 @@ class Outbox {
       const ordered = [...this.items].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
       for (const item of ordered) {
-        if (item.status === 'failed') continue;
+        // Skip failed and conflicted items — both need a user decision.
+        if (item.status !== 'pending') continue;
 
         try {
           await executeOutboxItem(item);
@@ -120,6 +172,20 @@ class Outbox {
         } catch (error) {
           if (error instanceof ApiError && error.code === 'NETWORK_ERROR') {
             break; // still offline — retry later
+          }
+
+          if (error instanceof ApiError && error.code === 'CONFLICT') {
+            const conflicted: OutboxItem = {
+              ...item,
+              status: 'conflict',
+              attempts: item.attempts + 1,
+              lastError: error.message,
+              payload: withConflict(item.payload, error),
+            };
+            await store.put(conflicted);
+            this.items = this.items.map((entry) => (entry.id === item.id ? conflicted : entry));
+            this.emit();
+            continue;
           }
 
           if (error instanceof ApiError && error.status >= 400 && error.status < 500) {

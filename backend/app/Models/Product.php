@@ -26,6 +26,7 @@ class Product extends Model
         return [
             'selling_price' => 'integer',
             'is_active' => 'boolean',
+            'version' => 'integer',
         ];
     }
 

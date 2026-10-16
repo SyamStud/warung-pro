@@ -70,11 +70,40 @@ class ProductController extends Controller
         return new ProductResource($this->findProduct($request, $product));
     }
 
-    public function update(UpdateProductRequest $request, int $product): ProductResource
+    /**
+     * Update a product.
+     *
+     * When the client sends the `version` its edit was based on, a newer server
+     * version is reported as a conflict (409) rather than silently overwriting
+     * a change made on another device.
+     */
+    public function update(UpdateProductRequest $request, int $product): ProductResource|JsonResponse
     {
         $model = $this->findProduct($request, $product);
 
-        $model->update($request->validated());
+        /** @var array<string, mixed> $attributes */
+        $attributes = $request->safe()->only([
+            'name', 'sku', 'barcode', 'unit', 'selling_price', 'category_id', 'notes', 'is_active',
+        ]);
+
+        $baseVersion = $request->filled('version') ? $request->integer('version') : null;
+
+        if (
+            $baseVersion !== null
+            && $baseVersion !== $model->version
+            && ! $request->boolean('force')
+        ) {
+            // A retried write that already landed is not a conflict.
+            if (! $this->alreadyApplied($model, $attributes)) {
+                return $this->conflictResponse($model);
+            }
+
+            return new ProductResource($model);
+        }
+
+        $model->fill($attributes);
+        $model->version = $model->version + 1;
+        $model->save();
 
         return new ProductResource($model);
     }
@@ -116,5 +145,57 @@ class ProductController extends Controller
     private function findProduct(Request $request, int $id): Product
     {
         return $request->user()->products()->findOrFail($id);
+    }
+
+    /**
+     * Whether the stored row already holds every value the client asked for.
+     *
+     * A lost response to an earlier successful write looks exactly like this,
+     * so it must not be reported to the user as a conflict.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function alreadyApplied(Product $product, array $attributes): bool
+    {
+        foreach ($attributes as $key => $value) {
+            $current = $product->getAttribute($key);
+
+            if ($current === null || $value === null) {
+                if ($current !== $value) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if (is_bool($current) || is_bool($value)) {
+                if ((bool) $current !== (bool) $value) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if ((string) $current !== (string) $value) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 409 response carrying the server's current row so the client can show a
+     * side-by-side comparison before the user picks a winner.
+     */
+    private function conflictResponse(Product $product): JsonResponse
+    {
+        return response()->json([
+            'error' => [
+                'code' => 'CONFLICT',
+                'message' => 'Produk ini sudah diubah di perangkat lain.',
+                'details' => ['current' => (new ProductResource($product))->resolve()],
+            ],
+        ], 409);
     }
 }

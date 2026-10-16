@@ -23,7 +23,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { type ProductInput } from '../api/products';
-import { ApiError } from '../lib/http';
+import { ApiError, describeDetails } from '../lib/http';
 import { saveProduct } from '../lib/offline/products';
 import { productKeys } from '../lib/queryKeys';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
@@ -54,7 +54,7 @@ interface ProductFormModalProps {
   initialBarcode?: string;
   categories: Category[];
   onDismiss: () => void;
-  onSaved: (message: string) => void;
+  onSaved: (message: string, color?: 'success' | 'warning' | 'danger') => void;
 }
 
 const emptyValues: FormValues = {
@@ -130,18 +130,19 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       const result = await saveProduct(product, input);
       await queryClient.invalidateQueries({ queryKey: productKeys.all });
       onSaved(
-        result === 'queued'
-          ? 'Tanpa koneksi: perubahan disimpan dan akan disinkron otomatis.'
-          : product
-            ? 'Produk diperbarui.'
-            : 'Produk ditambahkan.',
+        result === 'conflict'
+          ? 'Produk diubah di perangkat lain. Buka ikon sinkronisasi untuk memilih versi.'
+          : result === 'queued'
+            ? 'Tanpa koneksi: perubahan disimpan dan akan disinkron otomatis.'
+            : product
+              ? 'Produk diperbarui.'
+              : 'Produk ditambahkan.',
+        result === 'conflict' ? 'warning' : 'success',
       );
     } catch (error) {
       setSubmitError(
         error instanceof ApiError
-          ? error.details
-            ? Object.values(error.details).flat().join(' ')
-            : error.message
+          ? (describeDetails(error.details) ?? error.message)
           : 'Gagal menyimpan produk.',
       );
     } finally {

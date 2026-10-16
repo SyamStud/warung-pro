@@ -6,13 +6,13 @@ import { tokenStore } from './tokenStore';
 export class ApiError extends Error {
   readonly status: number;
   readonly code: ApiErrorBody['error']['code'] | 'NETWORK_ERROR';
-  readonly details?: Record<string, string[]>;
+  readonly details?: Record<string, unknown>;
 
   constructor(
     status: number,
     code: ApiErrorBody['error']['code'] | 'NETWORK_ERROR',
     message: string,
-    details?: Record<string, string[]>,
+    details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -20,6 +20,27 @@ export class ApiError extends Error {
     this.code = code;
     this.details = details;
   }
+}
+
+/** Flatten validation `details` (field -> messages) into one readable string. */
+export function describeDetails(details?: Record<string, unknown>): string | null {
+  if (!details) return null;
+
+  const messages = Object.values(details).flatMap((value) =>
+    typeof value === 'string' ? [value] : [],
+  );
+
+  return messages.length > 0 ? messages.join(' ') : null;
+}
+
+/**
+ * The server's current record from a `CONFLICT` response (see the backend's
+ * conflict envelope), or null when the payload is missing/unexpected.
+ */
+export function conflictRecord<T>(error: ApiError): T | null {
+  const current = error.details?.current;
+
+  return current !== null && typeof current === 'object' ? (current as T) : null;
 }
 
 interface RequestOptions {
