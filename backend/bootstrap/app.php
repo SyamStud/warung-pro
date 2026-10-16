@@ -20,7 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Behind a TLS-terminating reverse proxy (nginx/Caddy), set TRUSTED_PROXIES
+        // so Laravel sees the original scheme/host. Unset means trust no proxy.
+        $trustedProxies = env('TRUSTED_PROXIES');
+
+        if ($trustedProxies) {
+            $middleware->trustProxies(at: $trustedProxies === '*'
+                ? '*'
+                : array_map('trim', explode(',', $trustedProxies)));
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

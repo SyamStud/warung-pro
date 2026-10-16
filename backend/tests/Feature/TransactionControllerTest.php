@@ -263,4 +263,38 @@ class TransactionControllerTest extends TestCase
             ->assertJsonCount(1, 'data.items')
             ->assertJsonPath('data.items.0.product_name', $product->name);
     }
+
+    public function test_receipt_returns_404_for_another_users_transaction(): void
+    {
+        $transaction = Transaction::factory()->create();
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->getJson("/api/v1/transactions/{$transaction->id}/receipt")
+            ->assertStatus(404)
+            ->assertJsonPath('error.code', 'NOT_FOUND');
+    }
+
+    public function test_index_paginates_transactions_with_meta(): void
+    {
+        $user = User::factory()->create();
+        Transaction::factory()->count(3)->for($user)->create();
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/transactions?per_page=2')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.current_page', 1)
+            ->assertJsonPath('meta.last_page', 2)
+            ->assertJsonPath('meta.total', 3);
+    }
+
+    public function test_index_caps_the_page_size(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/transactions?per_page=5000')
+            ->assertOk()
+            ->assertJsonPath('meta.per_page', 100);
+    }
 }

@@ -107,4 +107,22 @@ class AuthControllerTest extends TestCase
 
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
+
+    public function test_login_is_rate_limited_after_ten_attempts(): void
+    {
+        User::factory()->create([
+            'email' => 'budi@example.com',
+            'password' => 'secret-password',
+        ]);
+
+        $credentials = ['email' => 'budi@example.com', 'password' => 'secret-password'];
+
+        for ($attempt = 1; $attempt <= 10; $attempt++) {
+            $this->postJson('/api/v1/auth/login', $credentials)->assertOk();
+        }
+
+        $this->postJson('/api/v1/auth/login', $credentials)
+            ->assertStatus(429)
+            ->assertJsonPath('error.code', 'RATE_LIMITED');
+    }
 }

@@ -30,9 +30,20 @@ Warung/
 - **Phase 4.5 — Antrean Offline (durable queue):** selesai (perubahan produk saat offline disimpan permanen di perangkat dan disinkron otomatis saat online kembali).
 - **Phase 5 — POS:** selesai (keranjang, kuantitas, diskon, pembayaran & kembalian, transaksi atomik dengan idempotency key, snapshot item, riwayat & detail).
 - **Phase 6 — Cetak Struk:** selesai pada level kode (encoder ESC/POS 58/80 mm + transport Bluetooth/USB/WiFi + pengaturan printer + cetak uji + cetak & cetak ulang). **Verifikasi pada printer fisik masih tertunda.**
-- Berikutnya: Phase 7 — Stabilisasi & Rilis.
+- **Phase 7 — Stabilisasi & Rilis:** selesai pada level kode & dokumentasi (rate limiting, konfigurasi produksi, prosedur backup/restore, scaffolding signing rilis Android, checklist acceptance). **Build & uji APK release serta uji perangkat masih tertunda.**
+
+Semua fase MVP sudah dikerjakan. Sisa pekerjaan hanya verifikasi perangkat keras/Android yang
+memerlukan SDK dan printer fisik — lihat [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md).
 
 Lihat §13 di [PLAN.md](./PLAN.md) untuk roadmap lengkap.
+
+## Dokumentasi
+
+| Dokumen | Isi |
+|---|---|
+| [PLAN.md](./PLAN.md) | Rencana lengkap, scope, desain API/DB, roadmap per fase |
+| [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Deploy backend produksi, konfigurasi, backup & restore PostgreSQL |
+| [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md) | Signing, build APK/AAB release, checklist verifikasi perangkat |
 
 ## Antrean Offline (Write Queue)
 

@@ -651,15 +651,24 @@ Gradle/Kotlin aplikasi bila ada konflik.
 
 ### 12.4 Acceptance Tests (Definisi Siap Rilis)
 
-- [ ] Produk dapat ditambah & dicari lewat semua metode.
-- [ ] Barcode dipindai menampilkan harga yang benar.
-- [ ] Produk yang diperbarui terlihat dari perangkat lain.
-- [ ] Data pengguna terisolasi.
-- [ ] Transaksi tersimpan dengan perhitungan benar.
-- [ ] Request transaksi berulang tidak menghasilkan duplikasi.
-- [ ] Struk tercetak pada printer yang didukung.
-- [ ] Kegagalan printer tidak menghilangkan transaksi.
-- [ ] Riwayat tetap konsisten walau harga produk berubah.
+**Terverifikasi otomatis** (backend `php artisan test`, mobile `npm run test.unit`):
+
+- [x] Produk dapat ditambah & dicari lewat semua metode — isolasi, validasi SKU/barcode, dan tiap mode input tercakup test.
+- [x] Barcode dipindai menampilkan harga yang benar — lookup barcode (ditemukan/tidak) teruji di API.
+- [x] Data pengguna terisolasi — test lintas akun untuk produk, kategori, transaksi, dan struk (`404`).
+- [x] Transaksi tersimpan dengan perhitungan benar — total/kembalian dihitung server, snapshot item teruji.
+- [x] Request transaksi berulang tidak menghasilkan duplikasi — idempotency key teruji (`201` lalu `200`, satu baris).
+- [x] Riwayat tetap konsisten walau harga produk berubah — snapshot nama/harga teruji.
+- [x] Format data struk — layout 58 mm (32 kolom) & 80 mm (48 kolom), pembungkusan, dan perataan harga teruji.
+- [x] Rate limit endpoint auth — `429 RATE_LIMITED` setelah 10 percobaan.
+
+**Menunggu verifikasi perangkat fisik** (lihat §10.5 & [docs/RELEASE-ANDROID.md](../docs/RELEASE-ANDROID.md)):
+
+- [ ] Produk yang diperbarui terlihat dari perangkat lain (uji dua perangkat).
+- [ ] Struk tercetak pada printer yang didukung (Bluetooth / USB OTG / WiFi).
+- [ ] Kegagalan printer tidak menghilangkan transaksi (matikan printer saat mencetak).
+- [ ] Pemindaian kamera nyata dan perilaku izin kamera.
+- [ ] Antrean offline lintas restart aplikasi di Android.
 
 ---
 
@@ -703,7 +712,22 @@ Pilih printer target, evaluasi plugin Bluetooth/ESC-POS, implementasi `PrinterSe
 ### Phase 7 — Stabilization & Release
 
 Jalankan semua test, uji end-to-end, uji keamanan/isolasi data, uji jaringan lambat/gagal, pemulihan koneksi printer, konfigurasi production, backup DB, build & uji APK release, dokumentasi.
-**Deliverable:** MVP siap dipakai pribadi.
+**Deliverable:** MVP siap dipakai pribadi. *(hardening + dokumentasi selesai; build & uji APK release menunggu Android SDK/printer — lihat [docs/RELEASE-ANDROID.md](../docs/RELEASE-ANDROID.md))*
+
+Yang sudah dikerjakan di Phase 7:
+
+- **Test:** 50 test backend (isolasi kategori/produk/transaksi/struk, idempotensi, snapshot, rate limit)
+  dan 24 test mobile; Pint, ESLint, `tsc`, dan build produksi bersih.
+- **Keamanan:** rate limit `auth` (10/menit) dan API terautentikasi (120/menit per pengguna);
+  amplop error konsisten; isolasi data teruji lintas akun.
+- **Konfigurasi produksi:** `.env.example` produksi (PostgreSQL, `APP_DEBUG=false`, HTTPS),
+  dukungan `TRUSTED_PROXIES`, `config:cache` terverifikasi bebas closure.
+- **Backup & restore:** prosedur `pg_dump`/`pg_restore` + retensi dan checklist go-live
+  di [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md).
+- **Rilis Android:** signing release dari `keystore.properties` (opsional, aman bila tidak ada),
+  `versionCode`/`versionName`, dan checklist verifikasi perangkat di
+  [docs/RELEASE-ANDROID.md](../docs/RELEASE-ANDROID.md).
+
 
 ### Ketergantungan antar-Phase
 
