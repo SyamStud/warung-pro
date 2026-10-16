@@ -1045,8 +1045,8 @@ select.input {
   font-size: 10.8px;
 }
 
-/* Ringkasan pesanan (Pembayaran) is tighter than the receipt preview, which
-   keeps the receipt-ish type for the printed layout. */
+/* Compact list typography: the payment summary and the transaction detail
+   read tighter than the receipt preview, which keeps receipt-ish type. */
 .card--summary {
   font-size: 12.6px;
 }

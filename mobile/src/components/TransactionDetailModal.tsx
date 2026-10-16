@@ -29,10 +29,10 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
         <div className="screen">
           <div className="card">
-            <h2 style={{ margin: '0 0 4px', fontSize: 15.3, fontWeight: 700 }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: 14.4, fontWeight: 700 }}>
               {transaction.transaction_number}
             </h2>
-            <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 11.7 }}>
+            <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 10.8 }}>
               {formatDateTime(transaction.created_at)}
             </p>
 
@@ -43,9 +43,9 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="card" style={{ marginTop: 12 }}>
+          <div className="card card--summary" style={{ marginTop: 12 }}>
             <h3 className="card__title" style={{ marginBottom: 10 }}>
-              Item ({items.length})
+              Item
             </h3>
             {items.map((item) => (
               <div key={item.id} className="receipt-card__item">
@@ -53,7 +53,6 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   <span className="receipt-card__item-name">{item.product_name}</span>
                   <span className="receipt-card__item-sub" style={{ display: 'block' }}>
                     {item.quantity} × {formatRupiah(item.unit_price)}
-                    {item.sku ? ` · ${item.sku}` : ''}
                   </span>
                 </span>
                 <span className="totals__value">{formatRupiah(item.line_total)}</span>
@@ -61,7 +60,7 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             ))}
           </div>
 
-          <div className="card" style={{ marginTop: 12 }}>
+          <div className="card card--summary" style={{ marginTop: 12 }}>
             <div className="totals">
               <div className="totals__row">
                 <span>Subtotal</span>
