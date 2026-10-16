@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -19,5 +20,10 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/categories', [CategoryController::class, 'index']);
         Route::post('/categories', [CategoryController::class, 'store']);
+
+        Route::post('/transactions', [TransactionController::class, 'store']);
+        Route::get('/transactions', [TransactionController::class, 'index']);
+        Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
+        Route::get('/transactions/{transaction}/receipt', [TransactionController::class, 'receipt']);
     });
 });

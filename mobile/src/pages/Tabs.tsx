@@ -7,7 +7,7 @@ import {
   IonTabButton,
   IonTabs,
 } from '@ionic/react';
-import { barcodeOutline, cartOutline, listOutline, pricetagOutline } from 'ionicons/icons';
+import { cartOutline, listOutline, pricetagOutline, receiptOutline } from 'ionicons/icons';
 import PriceChecker from './PriceChecker';
 import Products from './Products';
 import Pos from './Pos';
@@ -38,7 +38,7 @@ const Tabs: React.FC = () => (
         <IonLabel>Kasir</IonLabel>
       </IonTabButton>
       <IonTabButton tab="history" href="/tabs/history">
-        <IonIcon aria-hidden="true" icon={barcodeOutline} />
+        <IonIcon aria-hidden="true" icon={receiptOutline} />
         <IonLabel>Riwayat</IonLabel>
       </IonTabButton>
     </IonTabBar>

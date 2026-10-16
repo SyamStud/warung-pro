@@ -5,11 +5,14 @@ namespace App\Services;
 /**
  * Generates transaction numbers in the form `TRX-20261016-0001`.
  *
- * The daily sequence is per calendar date and reserves its value from the
- * shared atomic {@see Counter}, so parallel checkouts cannot collide.
+ * The daily sequence comes from the shared atomic {@see Counter} (keyed by
+ * date, so it restarts each day) rather than a row count, keeping numbers
+ * unique under concurrent checkouts.
  */
 class TransactionNumberGenerator
 {
+    private const PREFIX = 'TRX-';
+
     private const PAD_LENGTH = 4;
 
     public function __construct(private readonly Counter $counter) {}
@@ -17,8 +20,8 @@ class TransactionNumberGenerator
     public function next(): string
     {
         $date = now()->format('Ymd');
-        $sequence = $this->counter->next('transaction_number:'.$date);
+        $sequence = $this->counter->next("transaction_number:{$date}");
 
-        return "TRX-{$date}-".str_pad((string) $sequence, self::PAD_LENGTH, '0', STR_PAD_LEFT);
+        return self::PREFIX.$date.'-'.str_pad((string) $sequence, self::PAD_LENGTH, '0', STR_PAD_LEFT);
     }
 }

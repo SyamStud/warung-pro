@@ -105,53 +105,53 @@ Legenda: **P0** = wajib untuk inti (katalog + price checker), **P1** = POS + cet
 
 ### A. Authentication (P0)
 
-- [ ] Registrasi akun.
-- [ ] Login & logout (token per perangkat).
-- [ ] Penyimpanan token aman (Capacitor Secure Storage / Keystore).
-- [ ] Ambil profil pengguna (`GET /me`).
-- [ ] Otorisasi berbasis kepemilikan data (semua query ter-scope `user_id`).
-- [ ] Satu akun dipakai dari beberapa perangkat.
+- [x] Registrasi akun.
+- [x] Login & logout (token per perangkat).
+- [ ] Penyimpanan token aman (Capacitor Secure Storage / Keystore). *(saat ini Capacitor Preferences)*
+- [x] Ambil profil pengguna (`GET /me`).
+- [x] Otorisasi berbasis kepemilikan data (semua query ter-scope `user_id`).
+- [x] Satu akun dipakai dari beberapa perangkat.
 
 ### B. Product Management (P0)
 
-- [ ] Daftar produk (pagination).
-- [ ] Tambah / lihat detail / edit produk.
-- [ ] Arsipkan produk (soft delete).
-- [ ] Pencarian by **nama**, **SKU**, **barcode**.
-- [ ] Input barcode via kamera atau manual.
-- [ ] Generate SKU otomatis (backend).
-- [ ] Validasi SKU & barcode duplikat.
-- [ ] Kategori produk (sederhana: list + create).
+- [x] Daftar produk (pagination).
+- [x] Tambah / lihat detail / edit produk.
+- [x] Arsipkan produk (soft delete).
+- [x] Pencarian by **nama**, **SKU**, **barcode**.
+- [x] Input barcode via kamera atau manual.
+- [x] Generate SKU otomatis (backend).
+- [x] Validasi SKU & barcode duplikat.
+- [x] Kategori produk (sederhana: list + create).
 
 ### C. Price Checker (P0)
 
-- [ ] Scan barcode via kamera.
-- [ ] Tampilkan produk + harga setelah barcode ditemukan.
-- [ ] Tampilkan harga jual, SKU, dan barcode dengan jelas.
-- [ ] Pencarian manual (nama/SKU/barcode).
-- [ ] Status "barcode tidak ditemukan" + aksi tambah produk.
-- [ ] Penanganan izin kamera & kegagalan scanner.
+- [x] Scan barcode via kamera.
+- [x] Tampilkan produk + harga setelah barcode ditemukan.
+- [x] Tampilkan harga jual, SKU, dan barcode dengan jelas.
+- [x] Pencarian manual (nama/SKU/barcode).
+- [x] Status "barcode tidak ditemukan" + aksi tambah produk.
+- [x] Penanganan izin kamera & kegagalan scanner.
 
 ### D. Cloud Sync (P0)
 
-- [ ] Data produk tersimpan di backend.
-- [ ] Ambil katalog dari API.
-- [ ] Perubahan produk terlihat antarperangkat (refresh/invalidation).
-- [ ] Cache TanStack Query.
-- [ ] Penanganan kegagalan koneksi (error eksplisit, bukan data palsu).
-- [ ] Indikator status koneksi & penyimpanan.
-- [ ] Pagination katalog & riwayat.
+- [x] Data produk tersimpan di backend.
+- [x] Ambil katalog dari API.
+- [x] Perubahan produk terlihat antarperangkat (refresh/invalidation).
+- [x] Cache TanStack Query.
+- [x] Penanganan kegagalan koneksi (error eksplisit, bukan data palsu).
+- [x] Indikator status koneksi & penyimpanan.
+- [x] Pagination katalog & riwayat.
 
 ### E. Point of Sale (P1)
 
-- [ ] Tambah produk ke keranjang via scan/pencarian.
-- [ ] Ubah kuantitas & hapus item.
-- [ ] Hitung subtotal & total.
-- [ ] Input pembayaran & hitung kembalian.
-- [ ] Simpan transaksi ke backend (atomik).
-- [ ] Ringkasan transaksi.
-- [ ] Riwayat & detail transaksi.
-- [ ] Cegah transaksi ganda (idempotency key).
+- [x] Tambah produk ke keranjang via scan/pencarian.
+- [x] Ubah kuantitas & hapus item.
+- [x] Hitung subtotal & total.
+- [x] Input pembayaran & hitung kembalian.
+- [x] Simpan transaksi ke backend (atomik).
+- [x] Ringkasan transaksi.
+- [x] Riwayat & detail transaksi.
+- [x] Cegah transaksi ganda (idempotency key).
 
 ### F. Thermal Receipt Printing (P1)
 
@@ -517,6 +517,7 @@ Meski pendekatan utama online-first, perubahan katalog yang gagal terkirim tetap
 - Retry anti-duplikat via header `Idempotency-Key` pada `POST /products`.
 - Perubahan tertunda tampil optimistis di UI (badge **Menunggu**) dan indikator jumlah di header.
 - Item yang ditolak server (4xx) ditandai **gagal** — dapat dicoba ulang atau dibuang; tidak di-retry buta.
+- **Transaksi POS tidak diantrekan offline**: checkout butuh koneksi karena harga/total dihitung server (menghindari selisih bila harga berubah saat offline).
 
 **Masih Pasca-MVP (P2):** SQLite cache katalog persisten, pencarian offline penuh, antrean transaksi offline, resolusi konflik multi-perangkat, backup/restore.
 
@@ -673,7 +674,7 @@ Outbox durable (SQLite di Android, localStorage di web), enqueue perubahan katal
 ### Phase 5 — POS
 
 Keranjang, kuantitas & kalkulasi, form pembayaran, transaksi backend, idempotency key, snapshot item, halaman sukses, riwayat & detail.
-**Deliverable:** POS menyimpan transaksi dengan aman.
+**Deliverable:** POS menyimpan transaksi dengan aman. *(selesai)*
 
 ### Phase 6 — Printer Integration
 

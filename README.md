@@ -28,7 +28,8 @@ Warung/
 - **Phase 3 — Price Checker:** selesai (layar Cek Harga, lookup barcode, alur tidak ditemukan, integrasi scanner ke form produk).
 - **Phase 4 — Cloud Sync:** selesai (status koneksi, banner offline, refetch saat pulih, pull-to-refresh, invalidation, isolasi data terverifikasi).
 - **Phase 4.5 — Antrean Offline (durable queue):** selesai (perubahan produk saat offline disimpan permanen di perangkat dan disinkron otomatis saat online kembali).
-- Berikutnya: Phase 5 — POS.
+- **Phase 5 — POS:** selesai (keranjang, kuantitas, diskon, pembayaran & kembalian, transaksi atomik dengan idempotency key, snapshot item, riwayat & detail).
+- Berikutnya: Phase 6 — Cetak Struk (printer thermal Bluetooth).
 
 Lihat §13 di [PLAN.md](./PLAN.md) untuk roadmap lengkap.
 
@@ -108,6 +109,19 @@ Base URL: `/api/v1`. Endpoint yang sudah tersedia:
 | GET | `/products/lookup?barcode=` | Lookup barcode |
 | GET | `/categories` | Daftar kategori |
 | POST | `/categories` | Membuat kategori |
+| POST | `/transactions` | Simpan transaksi (atomik; mendukung header `Idempotency-Key`) |
+| GET | `/transactions` | Daftar transaksi (pagination) |
+| GET | `/transactions/{id}` | Detail transaksi |
+| GET | `/transactions/{id}/receipt` | Data untuk cetak struk |
 
 Semua error memakai envelope `{ "error": { "code", "message", "details?" } }`.
+
+## POS (Kasir)
+
+- Tab **Kasir**: cari produk atau pindai barcode untuk menambah ke keranjang, atur kuantitas, isi diskon & pembayaran, lalu **Bayar**.
+- Semua perhitungan (`subtotal`, `total`, kembalian) dilakukan **backend** dari harga produk di server — bukan dari klien.
+- Item transaksi disimpan sebagai **snapshot** (nama/harga saat transaksi), sehingga perubahan harga tidak mengubah riwayat.
+- Checkout memakai `Idempotency-Key` (satu kunci per isi keranjang) agar percobaan ulang tidak membuat transaksi ganda.
+- Tab **Riwayat**: daftar transaksi (pagination, pull-to-refresh) dan detail item/pembayaran.
+- Checkout memerlukan koneksi (server-authoritative). Antrean transaksi offline termasuk P2.
 
