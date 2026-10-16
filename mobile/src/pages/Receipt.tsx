@@ -1,21 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
-  IonBackButton,
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonNote,
   IonPage,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
 } from '@ionic/react';
 import { checkmarkCircleOutline, printOutline, receiptOutline } from 'ionicons/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { transactionsApi } from '../api/transactions';
 import PrinterSettingsModal from '../components/PrinterSettingsModal';
+import PageHeader from '../components/PageHeader';
 import ReceiptPreviewModal from '../components/ReceiptPreviewModal';
 import { useReceiptPrinter } from '../hooks/useReceiptPrinter';
 import { formatDateTime, formatRupiah } from '../lib/format';
@@ -56,16 +52,9 @@ const Receipt: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/tabs/history" text="" />
-          </IonButtons>
-          <IonTitle className="app-title-bar">Struk</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader title="Preview Struk" backHref="/tabs/history" />
+
         <div className="screen">
           {transactionId === null ? (
             <div className="card empty-state">
@@ -102,7 +91,7 @@ const Receipt: React.FC = () => {
                       color: 'var(--app-green)',
                     }}
                   >
-                    <IonIcon icon={checkmarkCircleOutline} style={{ fontSize: 22 }} />
+                    <IonIcon icon={checkmarkCircleOutline} style={{ fontSize: 19.8 }} />
                     <strong style={{ color: 'var(--app-ink)' }}>Pembayaran berhasil</strong>
                   </div>
 
@@ -121,7 +110,7 @@ const Receipt: React.FC = () => {
                     <summary
                       style={{
                         cursor: 'pointer',
-                        fontSize: 13,
+                        fontSize: 11.7,
                         fontWeight: 600,
                         color: 'var(--app-blue)',
                       }}

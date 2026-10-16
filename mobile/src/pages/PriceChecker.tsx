@@ -1,15 +1,10 @@
 import { useState } from 'react';
 import {
-  IonBackButton,
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonNote,
   IonPage,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
   useIonAlert,
   useIonToast,
 } from '@ionic/react';
@@ -29,6 +24,7 @@ import { productsApi } from '../api/products';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductRow from '../components/ProductRow';
 import ConnectionBanner from '../components/ConnectionBanner';
+import PageHeader from '../components/PageHeader';
 import SyncStatus from '../components/SyncStatus';
 import { useCart } from '../cart/useCart';
 import { formatRupiah } from '../lib/format';
@@ -159,19 +155,9 @@ const PriceChecker: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/tabs/home" text="" />
-          </IonButtons>
-          <IonTitle className="app-title-bar">Cek Harga</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatus />
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader title="Cek Harga" backHref="/tabs/home" actions={<SyncStatus />} />
+
         <ConnectionBanner />
 
         <div className="screen">
@@ -190,7 +176,7 @@ const PriceChecker: React.FC = () => {
                 style={{
                   textAlign: 'center',
                   color: 'var(--app-muted)',
-                  fontSize: 13,
+                  fontSize: 11.7,
                   margin: '12px 0 14px',
                 }}
               >
@@ -208,7 +194,7 @@ const PriceChecker: React.FC = () => {
                 {scanning ? 'Memindai...' : 'Pindai Barcode'}
               </button>
 
-              <p style={{ textAlign: 'center', color: 'var(--app-muted)', fontSize: 13, margin: '10px 0 18px' }}>
+              <p style={{ textAlign: 'center', color: 'var(--app-muted)', fontSize: 11.7, margin: '10px 0 18px' }}>
                 atau cari produk berdasarkan nama / SKU
               </p>
 
@@ -282,13 +268,13 @@ const PriceChecker: React.FC = () => {
               <div className="card" style={{ textAlign: 'center' }}>
                 <span
                   className="thumb"
-                  style={{ width: 72, height: 72, fontSize: 28, margin: '0 auto 12px' }}
+                  style={{ width: 72, height: 72, fontSize: 25.2, margin: '0 auto 12px' }}
                   aria-hidden="true"
                 >
                   {result.name.trim().charAt(0).toUpperCase() || '?'}
                 </span>
-                <h3 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 700 }}>{result.name}</h3>
-                <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 13 }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: 16.2, fontWeight: 700 }}>{result.name}</h3>
+                <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 11.7 }}>
                   SKU: {result.sku}
                   {result.unit ? ` · ${result.unit}` : ''}
                 </p>
@@ -296,7 +282,7 @@ const PriceChecker: React.FC = () => {
                 <p
                   style={{
                     margin: '16px 0 4px',
-                    fontSize: 30,
+                    fontSize: 27,
                     fontWeight: 800,
                     color: 'var(--app-blue)',
                     letterSpacing: '-0.02em',
@@ -304,7 +290,7 @@ const PriceChecker: React.FC = () => {
                 >
                   {formatRupiah(result.selling_price)}
                 </p>
-                <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 13 }}>
+                <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 11.7 }}>
                   Harga jual per {result.unit || 'satuan'}
                 </p>
 

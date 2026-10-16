@@ -96,7 +96,7 @@ const SyncStatus: React.FC = () => {
                 top: 0,
                 right: 0,
                 padding: '0 5px',
-                fontSize: 10,
+                fontSize: 9,
                 minWidth: 17,
                 justifyContent: 'center',
               }}

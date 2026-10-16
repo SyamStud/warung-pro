@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import {
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
@@ -11,13 +9,12 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
 } from '@ionic/react';
 import { closeCircle, printOutline, receiptOutline, searchOutline } from 'ionicons/icons';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { transactionsApi } from '../api/transactions';
 import ConnectionBanner from '../components/ConnectionBanner';
+import PageHeader from '../components/PageHeader';
 import PrinterSettingsModal from '../components/PrinterSettingsModal';
 import ReceiptPreviewModal from '../components/ReceiptPreviewModal';
 import TransactionDetailModal from '../components/TransactionDetailModal';
@@ -26,7 +23,7 @@ import { ApiError } from '../lib/http';
 import { transactionKeys } from '../lib/queryKeys';
 import { useReceiptPrinter } from '../hooks/useReceiptPrinter';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
-import { paymentMethodLabel, type PaymentMethod, type Transaction } from '../types';
+import { paymentMethodBadge, paymentMethodLabel, type PaymentMethod, type Transaction } from '../types';
 
 const PAGE_SIZE = 20;
 
@@ -67,10 +64,10 @@ const History: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonTitle className="app-title-bar">Riwayat Transaksi</IonTitle>
-          <IonButtons slot="end">
+      <IonContent>
+        <PageHeader
+          title="Riwayat Transaksi"
+          actions={
             <button
               type="button"
               className="btn btn--icon"
@@ -79,11 +76,9 @@ const History: React.FC = () => {
             >
               <IonIcon icon={printOutline} />
             </button>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+          }
+        />
 
-      <IonContent>
         <IonRefresher
           slot="fixed"
           onIonRefresh={async (event) => {
@@ -173,14 +168,10 @@ const History: React.FC = () => {
 
                 <span className="product-row__aside">
                   <span className="product-row__price">{formatRupiah(transaction.total)}</span>
-                  <span
-                    className={`badge ${
-                      transaction.status === 'paid' ? 'badge--green' : 'badge--grey'
-                    }`}
-                  >
-                    {transaction.status === 'paid' ? 'Lunas' : 'Dibatalkan'}
-                  </span>
-                  <span className="badge badge--blue">
+                  {transaction.status !== 'paid' && (
+                    <span className="badge badge--grey">Dibatalkan</span>
+                  )}
+                  <span className={`badge ${paymentMethodBadge(transaction.payment_method)}`}>
                     {paymentMethodLabel(transaction.payment_method)}
                   </span>
                 </span>

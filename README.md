@@ -166,14 +166,21 @@ tersembunyi):
 | **POS** | Pencarian/scan, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
 | **Pembayaran** | Ringkasan pesanan, diskon, metode **Tunai/Non Tunai**, nominal dibayar (+pintasan), kembalian, **Bayar** |
 | **Preview Struk** | Kartu struk bergaya kertas + **Cetak Struk** + teks printer |
-| **Riwayat** | Pencarian nomor, chip metode pembayaran, daftar transaksi berbadge, detail & cetak ulang |
+| **Riwayat** | Pencarian nomor, chip metode pembayaran, daftar transaksi (nomor · waktu · total · badge metode), detail & cetak ulang |
 
 Sistem desainnya biru `#2563EB` di atas latar `#F4F6FA`: kartu putih bersudut bulat, tombol utama
 biru selebar penuh, bar pencarian berbentuk pil, chip filter, dan badge status
 (`mobile/src/theme/variables.css` + `mobile/src/theme/app.css`).
 
+Chrome-nya **bukan navbar Ionic**: setiap layar (dan setiap modal) memakai komponen
+`PageHeader` — panah kembali + judul + aksi opsional yang menyatu dengan isi halaman. Panah
+kembali disembunyikan hanya di **Beranda** (akar aplikasi). Tipografinya **Plus Jakarta Sans**
+di-bundle lokal lewat `@fontsource-variable/plus-jakarta-sans`, jadi tetap tampil tanpa jaringan.
+Teks printer pada **Preview Struk** tetap monospace supaya kolom 32/48 karakter tidak bergeser.
+
 > Form produk memakai **satu kolom “SKU / Barcode”** dengan tombol generate (saran dari server)
-> dan tombol scan. Foto produk tidak dipakai di versi ini.
+> dan tombol scan. Foto produk tidak dipakai di versi ini; kolom Catatan disembunyikan dari form
+> (kolom `notes` tetap ada di API).
 
 ## POS (Kasir)
 

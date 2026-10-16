@@ -3,6 +3,30 @@
    Screens compose these classes; no screen defines its own palette.
    ========================================================================== */
 
+/* --- Typography ----------------------------------------------------------
+   Plus Jakarta Sans, bundled locally (main.tsx loads the @font-face rules)
+   so it renders inside the APK with no network and no CDN. */
+
+:root,
+body,
+ion-app,
+ion-content,
+ion-header,
+ion-footer,
+ion-tab-bar,
+ion-modal,
+ion-popover,
+ion-toast,
+ion-alert,
+ion-loading,
+ion-action-sheet,
+input,
+button,
+select,
+textarea {
+  font-family: var(--app-font);
+}
+
 /* --- Page scaffolding ---------------------------------------------------- */
 
 .screen {
@@ -15,8 +39,69 @@
   padding: 0 16px 28px;
 }
 
+/* --- In-page header ------------------------------------------------------
+   The title bar lives inside the page content (no Ionic toolbar), sitting
+   flat on the app background: optional back arrow, title, right-side actions. */
+
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(12px + var(--ion-safe-area-top, env(safe-area-inset-top, 0px))) 16px 8px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.page-head__back {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  margin-left: -8px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--app-ink);
+  font-size: 19.8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-head__back:active {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.page-head__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--app-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+/* Buttons placed in the header shrink to their content instead of filling
+   the row like the full-width page buttons. */
+.page-head__actions .btn {
+  width: auto;
+  min-height: 38px;
+  padding: 0 16px;
+}
+
 .app-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--app-ink);
   margin: 4px 0 14px;
@@ -30,7 +115,7 @@
 }
 
 .section-head__title {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--app-ink);
   margin: 0;
@@ -38,7 +123,7 @@
 
 .link {
   color: var(--app-blue);
-  font-size: 13px;
+  font-size: 11.7px;
   font-weight: 600;
   background: none;
   border: none;
@@ -80,7 +165,7 @@
 }
 
 .card__title {
-  font-size: 14px;
+  font-size: 12.6px;
   font-weight: 700;
   color: var(--app-ink);
   margin: 0;
@@ -103,13 +188,13 @@
   color: var(--app-blue);
   display: grid;
   place-items: center;
-  font-size: 18px;
+  font-size: 16.2px;
   font-weight: 700;
   flex: none;
 }
 
 .greeting__name {
-  font-size: 18px;
+  font-size: 16.2px;
   font-weight: 700;
   color: var(--app-ink);
   margin: 0;
@@ -117,7 +202,7 @@
 }
 
 .greeting__hint {
-  font-size: 13px;
+  font-size: 11.7px;
   color: var(--app-muted);
   margin: 2px 0 0;
 }
@@ -134,7 +219,7 @@
   padding: 0 18px;
   border-radius: var(--app-radius);
   border: none;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -183,7 +268,7 @@
 
 .btn--sm {
   min-height: 40px;
-  font-size: 14px;
+  font-size: 12.6px;
   width: auto;
   padding: 0 14px;
 }
@@ -211,20 +296,20 @@
 
 .field__label {
   display: block;
-  font-size: 13px;
+  font-size: 11.7px;
   font-weight: 600;
   color: var(--app-ink);
   margin-bottom: 6px;
 }
 
 .field__hint {
-  font-size: 12px;
+  font-size: 10.8px;
   color: var(--app-muted);
   margin-top: 4px;
 }
 
 .field__error {
-  font-size: 12px;
+  font-size: 10.8px;
   color: var(--app-red);
   margin-top: 4px;
 }
@@ -236,7 +321,7 @@
   border-radius: var(--app-radius);
   border: 1px solid var(--app-line-strong);
   background: #fff;
-  font-size: 15px;
+  font-size: 13.5px;
   font-family: inherit;
   color: var(--app-ink);
   outline: none;
@@ -292,7 +377,7 @@ select.input {
 
 .search__icon {
   color: var(--app-faint);
-  font-size: 18px;
+  font-size: 16.2px;
   flex: none;
 }
 
@@ -301,7 +386,7 @@ select.input {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 15px;
+  font-size: 13.5px;
   font-family: inherit;
   color: var(--app-ink);
   min-width: 0;
@@ -315,7 +400,7 @@ select.input {
   border: none;
   background: transparent;
   color: var(--app-faint);
-  font-size: 18px;
+  font-size: 16.2px;
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -341,7 +426,7 @@ select.input {
   border: 1px solid var(--app-line-strong);
   background: #fff;
   color: var(--app-muted);
-  font-size: 13px;
+  font-size: 11.7px;
   font-weight: 600;
   font-family: inherit;
   padding: 8px 15px;
@@ -363,7 +448,7 @@ select.input {
   gap: 5px;
   border-radius: 999px;
   padding: 3px 10px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   line-height: 1.6;
   white-space: nowrap;
@@ -425,17 +510,17 @@ select.input {
   color: var(--app-blue);
   display: grid;
   place-items: center;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .action-card__title {
-  font-size: 14px;
+  font-size: 12.6px;
   font-weight: 700;
   color: var(--app-ink);
 }
 
 .action-card__hint {
-  font-size: 12px;
+  font-size: 10.8px;
   color: var(--app-muted);
   margin-top: -4px;
 }
@@ -458,15 +543,15 @@ select.input {
 }
 
 .thumb {
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   flex: none;
-  border-radius: 12px;
+  border-radius: 11px;
   background: var(--app-blue-soft);
   color: var(--app-blue);
   display: grid;
   place-items: center;
-  font-size: 18px;
+  font-size: 14.4px;
   font-weight: 700;
 }
 
@@ -475,13 +560,14 @@ select.input {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 5px;
 }
 
 .product-row__name {
   display: block;
-  font-size: 14.5px;
+  font-size: 13.1px;
   font-weight: 600;
+  line-height: 1.25;
   color: var(--app-ink);
   margin: 0;
   overflow: hidden;
@@ -491,7 +577,8 @@ select.input {
 
 .product-row__sku {
   display: block;
-  font-size: 12px;
+  font-size: 10.8px;
+  line-height: 1.2;
   color: var(--app-muted);
   margin: 0;
   overflow: hidden;
@@ -500,7 +587,7 @@ select.input {
 }
 
 .product-row__price {
-  font-size: 14.5px;
+  font-size: 13.1px;
   font-weight: 700;
   color: var(--app-blue);
   white-space: nowrap;
@@ -510,7 +597,7 @@ select.input {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 8px;
   flex: none;
 }
 
@@ -536,7 +623,7 @@ select.input {
   border: none;
   background: #fff;
   color: var(--app-blue);
-  font-size: 17px;
+  font-size: 15.3px;
   line-height: 1;
   display: grid;
   place-items: center;
@@ -547,7 +634,7 @@ select.input {
   min-width: 26px;
   text-align: center;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12.6px;
   color: var(--app-ink);
 }
 
@@ -564,12 +651,12 @@ select.input {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 14px;
+  font-size: 12.6px;
   color: var(--app-muted);
 }
 
 .totals__row--strong {
-  font-size: 16px;
+  font-size: 14.4px;
   font-weight: 700;
   color: var(--app-ink);
 }
@@ -607,7 +694,7 @@ select.input {
   background: transparent;
   border-radius: 10px;
   min-height: 42px;
-  font-size: 14px;
+  font-size: 12.6px;
   font-weight: 600;
   font-family: inherit;
   color: var(--app-muted);
@@ -691,20 +778,20 @@ select.input {
   border-radius: var(--app-radius);
   box-shadow: var(--app-shadow);
   padding: 20px 18px;
-  font-size: 13.5px;
+  font-size: 12.2px;
   color: var(--app-ink);
 }
 
 .receipt-card__store {
   text-align: center;
-  font-size: 17px;
+  font-size: 15.3px;
   font-weight: 700;
 }
 
 .receipt-card__meta {
   text-align: center;
   color: var(--app-muted);
-  font-size: 12.5px;
+  font-size: 11.3px;
   margin-top: 4px;
 }
 
@@ -727,7 +814,7 @@ select.input {
 
 .receipt-card__item-sub {
   color: var(--app-muted);
-  font-size: 12px;
+  font-size: 10.8px;
 }
 
 .receipt-card__line {
@@ -738,13 +825,13 @@ select.input {
 }
 
 .receipt-card__line--total {
-  font-size: 15.5px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .receipt-card__mono {
   font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace;
-  font-size: 11.5px;
+  font-size: 10.4px;
   white-space: pre;
   overflow-x: auto;
   background: #f7f9fc;
@@ -763,27 +850,27 @@ select.input {
 }
 
 .empty-state__icon {
-  font-size: 34px;
+  font-size: 30.6px;
   color: var(--app-faint);
   margin-bottom: 10px;
 }
 
 .empty-state__title {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--app-ink);
   margin: 0 0 4px;
 }
 
 .empty-state__text {
-  font-size: 13px;
+  font-size: 11.7px;
   margin: 0;
 }
 
 .note {
   border-radius: var(--app-radius);
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: 11.7px;
   margin: 0 0 12px;
 }
 
@@ -827,53 +914,10 @@ ion-tab-bar.app-tabbar ion-tab-button {
 }
 
 ion-tab-bar.app-tabbar ion-tab-button ion-icon {
-  font-size: 22px;
+  font-size: 19.8px;
 }
 
 /* --- Ionic chrome tweaks ------------------------------------------------- */
 
-ion-header.app-header ion-toolbar {
-  --background: var(--app-bg);
-  --border-width: 0;
-  --min-height: 52px;
-}
-
-ion-header.app-header::after {
-  display: none;
-}
-
-ion-title.app-title-bar {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--app-ink);
-}
-
-/* The pushed pages (Cek Harga, Pembayaran, Struk) have no tab bar, but they
-   still get a back affordance from the router outlet's Ionic header. */
-.pushed-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0 14px;
-}
-
-.pushed-header__back {
-  width: 40px;
-  height: 40px;
-  flex: none;
-  border-radius: 12px;
-  border: 1px solid var(--app-line);
-  background: #fff;
-  color: var(--app-ink);
-  font-size: 19px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-
-.pushed-header__title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--app-ink);
-  margin: 0;
-}
+/* No Ionic toolbars are used for page chrome; the in-page `.page-head` bar
+   replaced every `ion-header`/`ion-toolbar` (pages and modals alike). */

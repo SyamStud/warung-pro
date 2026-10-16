@@ -20,12 +20,12 @@ const ConnectionBanner: React.FC = () => {
         gap: 8,
         background: 'var(--app-amber-soft)',
         color: 'var(--app-amber)',
-        fontSize: 13,
+        fontSize: 11.7,
         fontWeight: 600,
         padding: '10px 16px',
       }}
     >
-      <IonIcon icon={cloudOfflineOutline} aria-hidden="true" style={{ fontSize: 18 }} />
+      <IonIcon icon={cloudOfflineOutline} aria-hidden="true" style={{ fontSize: 16.2 }} />
       <span>Offline — data mungkin tidak terbaru dan perubahan disimpan untuk disinkron nanti.</span>
     </div>
   );

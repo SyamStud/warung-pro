@@ -41,7 +41,7 @@ const Splash: React.FC = () => {
           <h1
             style={{
               color: '#fff',
-              fontSize: 30,
+              fontSize: 27,
               fontWeight: 800,
               letterSpacing: '-0.02em',
               margin: '26px 0 6px',
@@ -49,7 +49,7 @@ const Splash: React.FC = () => {
           >
             Warung
           </h1>
-          <p style={{ color: 'rgba(255,255,255,.86)', fontSize: 14.5, margin: 0 }}>
+          <p style={{ color: 'rgba(255,255,255,.86)', fontSize: 13.1, margin: 0 }}>
             Cek harga &amp; kasir untuk warung kamu
           </p>
 
@@ -66,7 +66,7 @@ const Splash: React.FC = () => {
           <p
             style={{
               color: 'rgba(255,255,255,.7)',
-              fontSize: 12,
+              fontSize: 10.8,
               margin: '14px 0 0',
             }}
           >

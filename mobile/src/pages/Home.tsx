@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import {
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonNote,
   IonPage,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
   useIonToast,
 } from '@ionic/react';
 import {
@@ -23,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { categoriesApi } from '../api/categories';
 import { productsApi } from '../api/products';
 import ConnectionBanner from '../components/ConnectionBanner';
+import PageHeader from '../components/PageHeader';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductRow from '../components/ProductRow';
 import SyncStatus from '../components/SyncStatus';
@@ -87,16 +84,9 @@ const Home: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonTitle className="app-title-bar">Warung</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatus />
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader title="Beranda" hideBack actions={<SyncStatus />} />
+
         <ConnectionBanner />
 
         <div className="screen">

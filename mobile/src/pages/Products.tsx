@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import {
-  IonButtons,
   IonContent,
   IonFab,
   IonFabButton,
-  IonHeader,
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
@@ -13,8 +11,6 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
   useIonAlert,
   useIonToast,
 } from '@ionic/react';
@@ -26,6 +22,7 @@ import ProductDetailModal from '../components/ProductDetailModal';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductRow from '../components/ProductRow';
 import ConnectionBanner from '../components/ConnectionBanner';
+import PageHeader from '../components/PageHeader';
 import SyncStatus from '../components/SyncStatus';
 import { categoryKeys, productKeys } from '../lib/queryKeys';
 import { ApiError } from '../lib/http';
@@ -119,16 +116,9 @@ const Products: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonTitle className="app-title-bar">Katalog Produk</IonTitle>
-          <IonButtons slot="end">
-            <SyncStatus />
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader title="Katalog Produk" actions={<SyncStatus />} />
+
         <IonRefresher
           slot="fixed"
           onIonRefresh={async (event) => {
@@ -191,7 +181,7 @@ const Products: React.FC = () => {
             </h2>
             <select
               className="input"
-              style={{ minHeight: 42, width: 'auto', fontSize: 13, paddingRight: 34 }}
+              style={{ minHeight: 42, width: 'auto', fontSize: 11.7, paddingRight: 34 }}
               value={sort}
               aria-label="Urutkan produk"
               onChange={(e) => setSort(e.target.value as ProductSort)}

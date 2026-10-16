@@ -1,14 +1,9 @@
 import { useState } from 'react';
 import {
-  IonButton,
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonModal,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
   useIonAlert,
 } from '@ionic/react';
 import { createOutline, trashOutline } from 'ionicons/icons';
@@ -17,6 +12,7 @@ import { formatRupiah } from '../lib/format';
 import { archiveProduct } from '../lib/offline/products';
 import { productKeys } from '../lib/queryKeys';
 import type { Category, Product } from '../types';
+import PageHeader from './PageHeader';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -95,37 +91,30 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={onDismiss}>Tutup</IonButton>
-          </IonButtons>
-          <IonTitle className="app-title-bar">Detail Produk</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader title="Detail Produk" onBack={onDismiss} />
+
         <div className="screen">
           <div className="card" style={{ textAlign: 'center' }}>
             <span
               className="thumb"
-              style={{ width: 72, height: 72, fontSize: 28, margin: '0 auto 12px' }}
+              style={{ width: 72, height: 72, fontSize: 25.2, margin: '0 auto 12px' }}
               aria-hidden="true"
             >
               {product.name.trim().charAt(0).toUpperCase() || '?'}
             </span>
-            <h2 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700 }}>{product.name}</h2>
+            <h2 style={{ margin: '0 0 6px', fontSize: 16.2, fontWeight: 700 }}>{product.name}</h2>
             <p
               style={{
                 margin: 0,
-                fontSize: 24,
+                fontSize: 21.6,
                 fontWeight: 800,
                 color: 'var(--app-blue)',
               }}
             >
               {formatRupiah(product.selling_price)}
             </p>
-            <p style={{ margin: '6px 0 0', color: 'var(--app-muted)', fontSize: 13 }}>
+            <p style={{ margin: '6px 0 0', color: 'var(--app-muted)', fontSize: 11.7 }}>
               per {product.unit}
             </p>
 
@@ -147,7 +136,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {product.notes && (
               <>
                 <hr className="totals__divider" />
-                <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--app-muted)' }}>
+                <p style={{ margin: '10px 0 0', fontSize: 11.7, color: 'var(--app-muted)' }}>
                   {product.notes}
                 </p>
               </>

@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  IonButton,
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonModal,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
   useIonToast,
 } from '@ionic/react';
 import { printOutline, searchOutline } from 'ionicons/icons';
@@ -28,6 +23,7 @@ import {
   type PrinterTransportKind,
   type SavedPrinter,
 } from '../services/printer';
+import PageHeader from './PageHeader';
 
 interface PrinterSettingsModalProps {
   isOpen: boolean;
@@ -148,21 +144,17 @@ const PrinterSettingsModal: React.FC<PrinterSettingsModalProps> = ({ isOpen, onD
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={onDismiss}>Tutup</IonButton>
-          </IonButtons>
-          <IonTitle className="app-title-bar">Pengaturan Printer</IonTitle>
-          <IonButtons slot="end">
-            <IonButton strong disabled={busy} onClick={save}>
-              {busy ? <IonSpinner name="dots" /> : 'Simpan'}
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader
+          title="Pengaturan Printer"
+          onBack={onDismiss}
+          actions={
+            <button type="button" className="btn btn--sm btn--primary" disabled={busy} onClick={save}>
+              {busy ? <IonSpinner name="dots" /> : 'Simpan'}
+            </button>
+          }
+        />
+
         <div className="screen">
           {!native && (
             <p className="note note--warn">
@@ -245,7 +237,7 @@ const PrinterSettingsModal: React.FC<PrinterSettingsModalProps> = ({ isOpen, onD
                   className={`segmented__option${
                     transport === kind ? ' segmented__option--active' : ''
                   }`}
-                  style={{ fontSize: 13 }}
+                  style={{ fontSize: 11.7 }}
                   onClick={() => chooseTransport(kind)}
                 >
                   {TRANSPORT_LABELS[kind]}
@@ -311,7 +303,7 @@ const PrinterSettingsModal: React.FC<PrinterSettingsModalProps> = ({ isOpen, onD
                     <p className="field__label" style={{ marginBottom: 2 }}>
                       Printer terpilih
                     </p>
-                    <p style={{ margin: 0, fontSize: 13, color: 'var(--app-muted)' }}>
+                    <p style={{ margin: 0, fontSize: 11.7, color: 'var(--app-muted)' }}>
                       {settings.printer ? settings.printer.label : 'Belum dipilih'}
                     </p>
                   </div>

@@ -1,12 +1,6 @@
-import {
-  IonButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonModal,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/react';
+import { IonContent, IonModal } from '@ionic/react';
+
+import PageHeader from './PageHeader';
 
 interface ReceiptPreviewModalProps {
   isOpen: boolean;
@@ -23,16 +17,9 @@ const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
   onDismiss,
 }) => (
   <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-    <IonHeader className="app-header">
-      <IonToolbar>
-        <IonButtons slot="start">
-          <IonButton onClick={onDismiss}>Tutup</IonButton>
-        </IonButtons>
-        <IonTitle className="app-title-bar">{title}</IonTitle>
-      </IonToolbar>
-    </IonHeader>
-
     <IonContent>
+      <PageHeader title={title} onBack={onDismiss} />
+
       <div className="screen">
         <p className="field__hint" style={{ marginBottom: 12 }}>
           Teks ini dikirim apa adanya ke printer (lebar kertas mengikuti pengaturan).

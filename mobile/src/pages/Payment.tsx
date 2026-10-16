@@ -1,21 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
-  IonBackButton,
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonNote,
   IonPage,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
   useIonAlert,
   useIonToast,
 } from '@ionic/react';
 import { cashOutline, cardOutline, cartOutline } from 'ionicons/icons';
 import { useNavigate } from 'react-router-dom';
 import ConnectionBanner from '../components/ConnectionBanner';
+import PageHeader from '../components/PageHeader';
 import { useCart } from '../cart/useCart';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { formatRupiah } from '../lib/format';
@@ -68,15 +64,9 @@ const Payment: React.FC = () => {
   if (cart.lines.length === 0) {
     return (
       <IonPage>
-        <IonHeader className="app-header">
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonBackButton defaultHref="/tabs/pos" text="" />
-            </IonButtons>
-            <IonTitle className="app-title-bar">Pembayaran</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <IonContent>
+          <PageHeader title="Pembayaran" backHref="/tabs/pos" />
+
           <div className="screen">
             <div className="card empty-state">
               <IonIcon className="empty-state__icon" icon={cartOutline} />
@@ -99,16 +89,9 @@ const Payment: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/tabs/pos" text="" />
-          </IonButtons>
-          <IonTitle className="app-title-bar">Pembayaran</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader title="Pembayaran" backHref="/tabs/pos" />
+
         <ConnectionBanner />
 
         <div className="screen">

@@ -1,13 +1,9 @@
 import { useState } from 'react';
 import {
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonPage,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
   useIonAlert,
   useIonToast,
 } from '@ionic/react';
@@ -25,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { categoriesApi } from '../api/categories';
 import { productsApi } from '../api/products';
 import ConnectionBanner from '../components/ConnectionBanner';
+import PageHeader from '../components/PageHeader';
 import PrinterSettingsModal from '../components/PrinterSettingsModal';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductRow from '../components/ProductRow';
@@ -116,32 +113,32 @@ const Pos: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonTitle className="app-title-bar">POS</IonTitle>
-          <IonButtons slot="end">
-            <button
-              type="button"
-              className="btn btn--icon"
-              aria-label="Pengaturan printer"
-              onClick={printer.openSettings}
-            >
-              <IonIcon icon={printOutline} />
-            </button>
-            <button
-              type="button"
-              className="btn btn--icon"
-              aria-label="Pindai barcode"
-              disabled={scanning}
-              onClick={handleScan}
-            >
-              {scanning ? <IonSpinner name="dots" /> : <IonIcon icon={scanOutline} />}
-            </button>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader
+          title="POS"
+          actions={
+            <>
+              <button
+                type="button"
+                className="btn btn--icon"
+                aria-label="Pengaturan printer"
+                onClick={printer.openSettings}
+              >
+                <IonIcon icon={printOutline} />
+              </button>
+              <button
+                type="button"
+                className="btn btn--icon"
+                aria-label="Pindai barcode"
+                disabled={scanning}
+                onClick={handleScan}
+              >
+                {scanning ? <IonSpinner name="dots" /> : <IonIcon icon={scanOutline} />}
+              </button>
+            </>
+          }
+        />
+
         <ConnectionBanner />
 
         <div className="screen">
@@ -205,7 +202,7 @@ const Pos: React.FC = () => {
                         </span>
                         <IonIcon
                           icon={addCircleOutline}
-                          style={{ color: 'var(--app-blue)', fontSize: 22 }}
+                          style={{ color: 'var(--app-blue)', fontSize: 19.8 }}
                         />
                       </span>
                     }

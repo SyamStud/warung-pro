@@ -50,15 +50,15 @@ const Login: React.FC = () => {
                 color: '#fff',
                 display: 'grid',
                 placeItems: 'center',
-                fontSize: 34,
+                fontSize: 30.6,
                 margin: '0 auto 14px',
                 boxShadow: '0 12px 26px rgba(37,99,235,.28)',
               }}
             >
               <IonIcon icon={storefrontOutline} />
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>Masuk</h1>
-            <p style={{ color: 'var(--app-muted)', fontSize: 14, margin: 0 }}>
+            <h1 style={{ fontSize: 21.6, fontWeight: 800, margin: '0 0 4px' }}>Masuk</h1>
+            <p style={{ color: 'var(--app-muted)', fontSize: 12.6, margin: 0 }}>
               Masuk untuk mulai berjualan
             </p>
           </div>
@@ -123,7 +123,7 @@ const Login: React.FC = () => {
               >
                 Lupa password?
               </button>
-              <span style={{ fontSize: 13, color: 'var(--app-muted)' }}>
+              <span style={{ fontSize: 11.7, color: 'var(--app-muted)' }}>
                 Belum punya akun?{' '}
                 <button
                   type="button"
@@ -140,7 +140,7 @@ const Login: React.FC = () => {
             style={{
               textAlign: 'center',
               color: 'var(--app-faint)',
-              fontSize: 12,
+              fontSize: 10.8,
               marginTop: 18,
             }}
           >

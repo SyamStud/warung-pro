@@ -54,10 +54,20 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   non_cash: 'Non Tunai',
 };
 
+/** Badge tint per method: cash reads as "money in hand" (green), transfers stay neutral. */
+export const PAYMENT_METHOD_BADGES: Record<PaymentMethod, string> = {
+  cash: 'badge--green',
+  non_cash: 'badge--grey',
+};
+
 export const DEFAULT_PAYMENT_METHOD: PaymentMethod = 'cash';
 
 export function paymentMethodLabel(method: PaymentMethod | undefined): string {
   return method ? PAYMENT_METHOD_LABELS[method] : PAYMENT_METHOD_LABELS.cash;
+}
+
+export function paymentMethodBadge(method: PaymentMethod | undefined): string {
+  return PAYMENT_METHOD_BADGES[method ?? DEFAULT_PAYMENT_METHOD];
 }
 
 export interface Transaction {

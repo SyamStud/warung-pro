@@ -1,13 +1,6 @@
-import {
-  IonButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonModal,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/react';
+import { IonContent, IonModal } from '@ionic/react';
 import type { ProductConflict } from '../lib/offline/conflicts';
+import PageHeader from './PageHeader';
 
 interface ConflictResolutionModalProps {
   isOpen: boolean;
@@ -31,16 +24,9 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
   onKeepMine,
 }) => (
   <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-    <IonHeader className="app-header">
-      <IonToolbar>
-        <IonTitle className="app-title-bar">Perubahan Bentrok</IonTitle>
-        <IonButtons slot="end">
-          <IonButton onClick={onDismiss}>Tutup</IonButton>
-        </IonButtons>
-      </IonToolbar>
-    </IonHeader>
-
     <IonContent>
+      <PageHeader title="Perubahan Bentrok" onBack={onDismiss} />
+
       <div className="screen">
         <p className="note note--warn">
           Produk berikut diubah di perangkat lain setelah Anda membuka formulir. Pilih versi mana

@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  IonButton,
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonModal,
-  IonNote,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
 } from '@ionic/react';
 import { barcodeOutline, sparklesOutline } from 'ionicons/icons';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
@@ -23,6 +17,7 @@ import { productKeys } from '../lib/queryKeys';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { ScannerError, scannerService } from '../services/scanner';
 import type { Category, Product } from '../types';
+import PageHeader from './PageHeader';
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Nama wajib diisi').max(255, 'Maksimal 255 karakter'),
@@ -35,7 +30,6 @@ const schema = z.object({
     .min(1, 'Harga wajib diisi')
     .regex(/^\d+$/, 'Hanya boleh angka'),
   category_id: z.number().int().nullable(),
-  notes: z.string().trim(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -57,7 +51,6 @@ const emptyValues: FormValues = {
   unit: 'pcs',
   selling_price: '',
   category_id: null,
-  notes: '',
 };
 
 function toFormValues(product: Product | null, initialSku?: string): FormValues {
@@ -68,7 +61,6 @@ function toFormValues(product: Product | null, initialSku?: string): FormValues 
     unit: product.unit,
     selling_price: String(product.selling_price),
     category_id: product.category_id,
-    notes: product.notes ?? '',
   };
 }
 
@@ -91,12 +83,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { control, handleSubmit, reset, setValue, watch } = useForm<FormValues>({
+  const { control, handleSubmit, reset, setValue } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: emptyValues,
   });
-
-  const skuValue = watch('sku');
 
   // Reload the form whenever it opens for a different product.
   useEffect(() => {
@@ -113,7 +103,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       unit: values.unit,
       selling_price: Number(values.selling_price),
       category_id: values.category_id,
-      notes: values.notes || null,
     };
     // On edit an empty SKU means "keep the existing one"; on create the
     // backend generates one.
@@ -175,23 +164,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={onDismiss}>Batal</IonButton>
-          </IonButtons>
-          <IonTitle className="app-title-bar">
-            {product ? 'Edit Produk' : 'Tambah Produk'}
-          </IonTitle>
-          <IonButtons slot="end">
-            <IonButton strong onClick={handleSubmit(onSubmit)} disabled={submitting || busy}>
-              {submitting ? <IonSpinner name="dots" /> : 'Simpan'}
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader title={product ? 'Edit Produk' : 'Tambah Produk'} onBack={onDismiss} />
+
         <div className="screen">
           <form onSubmit={handleSubmit(onSubmit)}>
             <label className="field">
@@ -259,12 +234,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   )}
                 />
               </div>
-              <span className="field__hint">
-                SKU sama dengan barcode. Kosongkan untuk dibuat otomatis (PRD-xxxxxx).
-              </span>
-              {skuValue === '' && product && (
-                <span className="field__hint">Dibiarkan kosong: SKU lama tetap dipakai.</span>
-              )}
             </div>
 
             <div className="field__row" style={{ gap: 12 }}>
@@ -342,22 +311,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               />
             </label>
 
-            <label className="field">
-              <span className="field__label">Catatan</span>
-              <Controller
-                control={control}
-                name="notes"
-                render={({ field }) => (
-                  <textarea
-                    className="input"
-                    value={field.value}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    placeholder="Opsional"
-                  />
-                )}
-              />
-            </label>
-
             {submitError && <p className="note note--error">{submitError}</p>}
             {fieldNotice && <p className="note note--warn">{fieldNotice}</p>}
             {!online && (
@@ -370,17 +323,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <button type="submit" className="btn btn--primary" disabled={submitting || busy}>
               {submitting ? <IonSpinner name="dots" /> : product ? 'Simpan Perubahan' : 'Simpan Produk'}
             </button>
-            <IonNote
-              style={{
-                display: 'block',
-                textAlign: 'center',
-                marginTop: 10,
-                fontSize: 12,
-                color: 'var(--app-faint)',
-              }}
-            >
-              Foto produk tidak diperlukan di versi ini.
-            </IonNote>
           </form>
         </div>
       </IonContent>

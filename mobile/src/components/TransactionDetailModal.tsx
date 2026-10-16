@@ -1,16 +1,8 @@
-import {
-  IonButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonModal,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/react';
+import { IonContent, IonIcon, IonModal } from '@ionic/react';
 import { printOutline } from 'ionicons/icons';
 import { formatDateTime, formatRupiah } from '../lib/format';
-import { paymentMethodLabel, type Transaction } from '../types';
+import { paymentMethodBadge, paymentMethodLabel, type Transaction } from '../types';
+import PageHeader from './PageHeader';
 
 interface TransactionDetailModalProps {
   isOpen: boolean;
@@ -32,34 +24,20 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader className="app-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={onDismiss}>Tutup</IonButton>
-          </IonButtons>
-          <IonTitle className="app-title-bar">Detail Transaksi</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
+        <PageHeader title="Detail Transaksi" onBack={onDismiss} />
+
         <div className="screen">
           <div className="card">
-            <h2 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: 15.3, fontWeight: 700 }}>
               {transaction.transaction_number}
             </h2>
-            <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 13 }}>
+            <p style={{ margin: 0, color: 'var(--app-muted)', fontSize: 11.7 }}>
               {formatDateTime(transaction.created_at)}
             </p>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <span
-                className={`badge ${
-                  transaction.status === 'paid' ? 'badge--green' : 'badge--grey'
-                }`}
-              >
-                {transaction.status === 'paid' ? 'Lunas' : 'Dibatalkan'}
-              </span>
-              <span className="badge badge--blue">
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <span className={`badge ${paymentMethodBadge(transaction.payment_method)}`}>
                 {paymentMethodLabel(transaction.payment_method)}
               </span>
             </div>
