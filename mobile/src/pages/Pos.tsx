@@ -20,17 +20,26 @@ import {
   useIonAlert,
   useIonToast,
 } from '@ionic/react';
-import { addOutline, barcodeOutline, closeOutline, removeOutline } from 'ionicons/icons';
+import {
+  addOutline,
+  barcodeOutline,
+  closeOutline,
+  printOutline,
+  removeOutline,
+} from 'ionicons/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { categoriesApi } from '../api/categories';
 import { productsApi } from '../api/products';
 import { transactionsApi } from '../api/transactions';
 import ConnectionBanner from '../components/ConnectionBanner';
+import PrinterSettingsModal from '../components/PrinterSettingsModal';
 import ProductFormModal from '../components/ProductFormModal';
+import ReceiptPreviewModal from '../components/ReceiptPreviewModal';
 import { formatRupiah } from '../lib/format';
 import { ApiError } from '../lib/http';
 import { categoryKeys, productKeys, transactionKeys } from '../lib/queryKeys';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useReceiptPrinter } from '../hooks/useReceiptPrinter';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
 import { ScannerError, scannerService } from '../services/scanner';
 import {
@@ -55,6 +64,7 @@ const Pos: React.FC = () => {
   const [presentToast] = useIonToast();
   const [presentAlert] = useIonAlert();
   const online = useOnlineStatus();
+  const printer = useReceiptPrinter();
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -151,7 +161,15 @@ const Pos: React.FC = () => {
           `Total ${formatRupiah(data.total)}\n` +
           `Dibayar ${formatRupiah(data.paid_amount)}\n` +
           `Kembalian ${formatRupiah(data.change_amount)}`,
-        buttons: ['Selesai'],
+        buttons: [
+          {
+            text: 'Cetak struk',
+            handler: () => {
+              void printer.print(data);
+            },
+          },
+          'Selesai',
+        ],
       });
 
       clearCart();
@@ -211,6 +229,9 @@ const Pos: React.FC = () => {
         <IonToolbar>
           <IonTitle>Kasir</IonTitle>
           <IonButtons slot="end">
+            <IonButton onClick={printer.openSettings} aria-label="Pengaturan printer">
+              <IonIcon slot="icon-only" icon={printOutline} />
+            </IonButton>
             <IonButton onClick={handleScan} disabled={scanning} aria-label="Pindai barcode">
               {scanning ? (
                 <IonSpinner name="dots" />
@@ -416,6 +437,15 @@ const Pos: React.FC = () => {
           showToast(message);
           void queryClient.invalidateQueries({ queryKey: productKeys.all });
         }}
+      />
+
+      <PrinterSettingsModal isOpen={printer.settingsOpen} onDismiss={printer.closeSettings} />
+
+      <ReceiptPreviewModal
+        isOpen={printer.preview !== null}
+        title={printer.preview?.title ?? 'Struk'}
+        text={printer.preview?.text ?? ''}
+        onDismiss={printer.closePreview}
       />
     </IonPage>
   );

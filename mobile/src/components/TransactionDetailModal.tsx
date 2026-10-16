@@ -4,6 +4,7 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
+  IonIcon,
   IonItem,
   IonLabel,
   IonList,
@@ -13,6 +14,7 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/react';
+import { printOutline } from 'ionicons/icons';
 import { formatDateTime, formatRupiah } from '../lib/format';
 import type { Transaction } from '../types';
 
@@ -100,6 +102,7 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         </IonList>
 
         <IonButton expand="block" className="ion-margin-top" onClick={() => onPrint(transaction)}>
+          <IonIcon slot="start" icon={printOutline} />
           Cetak struk
         </IonButton>
       </IonContent>

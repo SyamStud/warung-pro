@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import {
   IonBadge,
+  IonButton,
+  IonButtons,
   IonContent,
   IonHeader,
+  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
@@ -15,23 +18,26 @@ import {
   IonSpinner,
   IonTitle,
   IonToolbar,
-  useIonAlert,
 } from '@ionic/react';
+import { printOutline } from 'ionicons/icons';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { transactionsApi } from '../api/transactions';
 import ConnectionBanner from '../components/ConnectionBanner';
+import PrinterSettingsModal from '../components/PrinterSettingsModal';
+import ReceiptPreviewModal from '../components/ReceiptPreviewModal';
 import TransactionDetailModal from '../components/TransactionDetailModal';
 import { formatDateTime, formatRupiah } from '../lib/format';
 import { ApiError } from '../lib/http';
 import { transactionKeys } from '../lib/queryKeys';
+import { useReceiptPrinter } from '../hooks/useReceiptPrinter';
 import type { Transaction } from '../types';
 
 const PAGE_SIZE = 20;
 
-/** History — transaction list and detail. Receipt printing arrives in Phase 6. */
+/** History — transaction list, detail, and receipt printing. */
 const History: React.FC = () => {
-  const [presentAlert] = useIonAlert();
   const [detail, setDetail] = useState<Transaction | null>(null);
+  const printer = useReceiptPrinter();
 
   const query = useInfiniteQuery({
     queryKey: transactionKeys.list(),
@@ -49,19 +55,16 @@ const History: React.FC = () => {
     query.isError &&
     (query.error instanceof ApiError ? query.error.message : 'Gagal memuat riwayat transaksi.');
 
-  const printReceipt = (transaction: Transaction) => {
-    presentAlert({
-      header: 'Cetak struk',
-      message: `Struk ${transaction.transaction_number} akan dapat dicetak setelah integrasi printer thermal (Phase 6).`,
-      buttons: ['OK'],
-    });
-  };
-
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
           <IonTitle>Riwayat</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={printer.openSettings} aria-label="Pengaturan printer">
+              <IonIcon slot="icon-only" icon={printOutline} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
@@ -130,7 +133,16 @@ const History: React.FC = () => {
         isOpen={detail !== null}
         transaction={detail}
         onDismiss={() => setDetail(null)}
-        onPrint={printReceipt}
+        onPrint={printer.print}
+      />
+
+      <PrinterSettingsModal isOpen={printer.settingsOpen} onDismiss={printer.closeSettings} />
+
+      <ReceiptPreviewModal
+        isOpen={printer.preview !== null}
+        title={printer.preview?.title ?? 'Struk'}
+        text={printer.preview?.text ?? ''}
+        onDismiss={printer.closePreview}
       />
     </IonPage>
   );

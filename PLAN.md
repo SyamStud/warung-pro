@@ -13,7 +13,7 @@
 1. Mengelola katalog produk dan harga.
 2. Mengecek harga lewat **scan barcode** atau **pencarian**.
 3. Mencatat transaksi penjualan sederhana (POS).
-4. Mencetak struk via **printer thermal Bluetooth**.
+4. Mencetak struk via **printer thermal** (Bluetooth SPP, USB OTG, atau WiFi/LAN).
 
 Backend/cloud menjadi **sumber data utama** agar katalog dan riwayat transaksi konsisten di beberapa perangkat.
 
@@ -60,7 +60,7 @@ Manajemen stok, stock opname, supplier/PO, multi-cabang, payment gateway, pajak/
 | Database | PostgreSQL | v15+ |
 | Auth | Laravel Sanctum | Token per perangkat |
 | Barcode scanner | Plugin barcode Capacitor | MLKit/ZXing-compatible |
-| Printer | Bluetooth + ESC/POS | Abstraksi `PrinterService` |
+| Printer | Bluetooth SPP / USB OTG / WiFi TCP + ESC/POS | Abstraksi `PrinterService` |
 | Local cache | SQLite (opsional) | **Ditunda** sampai pasca-MVP |
 | Hosting | VPS + HTTPS | Sertifikat valid (Let's Encrypt) |
 | VCS | Git | Trunk-based + PR |
@@ -73,7 +73,7 @@ Manajemen stok, stock opname, supplier/PO, multi-cabang, payment gateway, pajak/
 │  ├── React Router  ── 4 tab: Price Checker | Products | POS | History│
 │  ├── TanStack Query ── cache & sinkronisasi server state            │
 │  ├── Barcode Scanner (Capacitor)                                    │
-│  ├── Printer Service (ESC/POS over Bluetooth SPP/BLE)               │
+│  ├── Printer Service (ESC/POS over Bluetooth SPP / USB / TCP)       │
 │  └── Secure Storage (token)                                         │
 └───────────────────────────────┬─────────────────────────────────────┘
                                  │ HTTPS / JSON
@@ -155,16 +155,21 @@ Legenda: **P0** = wajib untuk inti (katalog + price checker), **P1** = POS + cet
 
 ### F. Thermal Receipt Printing (P1)
 
-- [ ] Pilih printer thermal Bluetooth.
-- [ ] Simpan printer default.
-- [ ] Test print.
-- [ ] Dukungan ESC/POS.
-- [ ] Format 58 mm / 80 mm.
-- [ ] Cetak info toko & transaksi.
-- [ ] Cetak item, kuantitas, harga, total.
-- [ ] Cetak pembayaran & kembalian.
-- [ ] Tangani kegagalan koneksi printer.
-- [ ] Cetak ulang dari riwayat.
+- [x] Pilih printer thermal Bluetooth.
+- [x] Simpan printer default.
+- [x] Test print.
+- [x] Dukungan ESC/POS.
+- [x] Format 58 mm / 80 mm.
+- [x] Cetak info toko & transaksi.
+- [x] Cetak item, kuantitas, harga, total.
+- [x] Cetak pembayaran & kembalian.
+- [x] Tangani kegagalan koneksi printer.
+- [x] Cetak ulang dari riwayat.
+
+> **Catatan implementasi (Phase 6):** transport yang didukung **Bluetooth SPP, USB (OTG), dan WiFi/LAN (TCP 9100)**
+> lewat plugin `@devlas/capacitor-thermal-printer` (raw ESC/POS bytes). Struk dibuat oleh encoder
+> lokal (`src/lib/receipt`) sehingga bisa diuji tanpa perangkat keras. **Verifikasi pada printer fisik
+> masih perlu dilakukan** — lihat §10.5.
 
 ### G. Pasca-MVP (P2) — hanya setelah MVP stabil
 
@@ -527,48 +532,47 @@ Meski pendekatan utama online-first, perubahan katalog yang gagal terkirim tetap
 
 ### 10.1 Requirements
 
-- Printer thermal Bluetooth kompatibel Android (Bluetooth Classic SPP atau BLE).
+- Printer thermal kompatibel Android: **Bluetooth SPP**, **USB (OTG)**, atau **WiFi/LAN (TCP 9100)**.
 - Dukungan ESC/POS bila printer memakai protokol tersebut.
 - Format 58 mm / 80 mm sesuai perangkat.
 
-### 10.2 Printer Service (abstraksi)
+### 10.2 Printer Service (implementasi)
+
+Abstraksi yang dipakai di `mobile/src/services/printer.ts`:
 
 ```typescript
-interface PrinterDevice {
-  id: string;
-  name: string;
-  type: "spp" | "ble";
+type PrinterTransportKind = "bluetooth" | "usb" | "tcp";
+
+interface SavedPrinter {
+  transport: PrinterTransportKind;
+  label: string;
+  address?: string;   // Bluetooth MAC
+  vendorId?: number;  // USB
+  productId?: number; // USB
+  host?: string;      // TCP
+  port?: number;      // TCP (default 9100)
 }
 
-interface ReceiptData {
+interface PrinterSettings {
+  paperWidth: "58" | "80";
   storeName: string;
-  transactionNumber: string;
-  dateTime: string;
-  items: Array<{
-    name: string;
-    quantity: number;
-    unitPrice: number;
-    lineTotal: number;
-  }>;
-  subtotal: number;
-  discountAmount: number;
-  total: number;
-  paidAmount: number;
-  changeAmount: number;
-  footerMessage?: string;
+  storeAddress: string;
+  footer: string;
+  printer: SavedPrinter | null;
 }
 
-interface PrinterService {
-  scanDevices(): Promise<PrinterDevice[]>;
-  connect(deviceId: string): Promise<void>;
-  disconnect(): Promise<void>;
-  isConnected(): boolean;
-  testPrint(): Promise<void>;
-  printReceipt(receipt: ReceiptData): Promise<void>;
-}
+function listPrintDevices(transport: "usb" | "bluetooth"): Promise<PrinterDevice[]>;
+function printTransaction(t: Transaction, s: PrinterSettings): Promise<void>;
+function testPrint(s: PrinterSettings): Promise<void>;
+function previewReceipt(t: Transaction, s: PrinterSettings): string;
 ```
 
-Implementasi aktual mengikuti API plugin native yang dipilih (dievaluasi pada Phase 6). Pilihan library final setelah **pengujian pada printer fisik** target.
+- Transport native: plugin `@devlas/capacitor-thermal-printer` — stateless `print()` (connect → write → close),
+  bytes dikirim sebagai base64 agar tidak rusak saat melewati bridge.
+- Encoder struk sendiri (`mobile/src/lib/receipt`): model layout dipisah dari renderer, sehingga
+  lebar 58 mm (32 kolom) dan 80 mm (48 kolom) bisa diuji tanpa printer. Renderer: ESC/POS bytes
+  (printer) dan teks biasa (pratinjau di web).
+- Di web/browser pencetakan tidak tersedia; aplikasi menampilkan **pratinjau struk** sebagai gantinya.
 
 ### 10.3 Konten Struk
 
@@ -581,6 +585,21 @@ Nama toko · nomor transaksi · tanggal & waktu · nama produk · kuantitas · h
 - Pengguna dapat mencoba cetak ulang.
 - Cetak ulang **tidak** membuat transaksi baru.
 - Sediakan test print sebelum dipakai untuk transaksi.
+
+### 10.5 Verifikasi di Perangkat Fisik (belum dilakukan)
+
+Encoder struk sudah diuji otomatis (lebar 58/80 mm, pembungkusan baris, perataan harga).
+Yang **belum** bisa diverifikasi di lingkungan pengembangan (tidak ada Android SDK/printer):
+
+1. Build APK: `cd mobile && npm run build && npx cap sync android`, lalu `./gradlew assembleDebug` di Android Studio.
+2. Pasangkan printer di pengaturan sistem Android (Bluetooth) atau sambungkan via OTG (USB).
+3. Buka **Riwayat → ikon printer** (atau ikon printer di tab Kasir), pilih jenis koneksi, "Cari perangkat",
+   pilih printer, atur lebar kertas, lalu **Cetak uji**.
+4. Cetak struk nyata dari detail transaksi dan dari dialog sukses checkout (tombol "Cetak struk").
+
+Risiko yang perlu diperhatikan saat build native pertama: plugin menarik `usb-serial-for-android`
+via JitPack dan `kotlin-stdlib` 2.2.10 (lihat `android/build.gradle` plugin) — sesuaikan versi
+Gradle/Kotlin aplikasi bila ada konflik.
 
 ---
 
@@ -679,7 +698,7 @@ Keranjang, kuantitas & kalkulasi, form pembayaran, transaksi backend, idempotenc
 ### Phase 6 — Printer Integration
 
 Pilih printer target, evaluasi plugin Bluetooth/ESC-POS, implementasi `PrinterService`, printer default, test print, format struk, cetak & cetak ulang, failure handling, uji fisik.
-**Deliverable:** transaksi dapat dicetak.
+**Deliverable:** transaksi dapat dicetak. *(kode selesai; uji fisik tertunda — lihat §10.5)*
 
 ### Phase 7 — Stabilization & Release
 

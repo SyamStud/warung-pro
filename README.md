@@ -1,6 +1,6 @@
 # Personal POS & Price Checker
 
-Aplikasi Android untuk mengelola katalog produk, mengecek harga lewat scan barcode, dan mencatat transaksi penjualan sederhana (POS) dengan cetak struk via printer thermal Bluetooth.
+Aplikasi Android untuk mengelola katalog produk, mengecek harga lewat scan barcode, dan mencatat transaksi penjualan sederhana (POS) dengan cetak struk via printer thermal (Bluetooth, USB, atau WiFi).
 
 > **Fokus MVP:** Price Checker + Katalog → POS + Cetak Struk.
 > Baca [PLAN.md](./PLAN.md) untuk rencana lengkap.
@@ -19,7 +19,7 @@ Warung/
 
 - **Mobile:** Ionic React, TypeScript, Capacitor, React Router, TanStack Query, React Hook Form, Zod
 - **Backend:** Laravel, PostgreSQL, Laravel Sanctum
-- **Hardware:** Barcode scanner (kamera), printer thermal Bluetooth (ESC/POS)
+- **Hardware:** Barcode scanner (kamera), printer thermal (Bluetooth SPP / USB OTG / WiFi) dengan ESC/POS
 
 ## Status
 
@@ -29,7 +29,8 @@ Warung/
 - **Phase 4 — Cloud Sync:** selesai (status koneksi, banner offline, refetch saat pulih, pull-to-refresh, invalidation, isolasi data terverifikasi).
 - **Phase 4.5 — Antrean Offline (durable queue):** selesai (perubahan produk saat offline disimpan permanen di perangkat dan disinkron otomatis saat online kembali).
 - **Phase 5 — POS:** selesai (keranjang, kuantitas, diskon, pembayaran & kembalian, transaksi atomik dengan idempotency key, snapshot item, riwayat & detail).
-- Berikutnya: Phase 6 — Cetak Struk (printer thermal Bluetooth).
+- **Phase 6 — Cetak Struk:** selesai pada level kode (encoder ESC/POS 58/80 mm + transport Bluetooth/USB/WiFi + pengaturan printer + cetak uji + cetak & cetak ulang). **Verifikasi pada printer fisik masih tertunda.**
+- Berikutnya: Phase 7 — Stabilisasi & Rilis.
 
 Lihat §13 di [PLAN.md](./PLAN.md) untuk roadmap lengkap.
 
@@ -124,4 +125,29 @@ Semua error memakai envelope `{ "error": { "code", "message", "details?" } }`.
 - Checkout memakai `Idempotency-Key` (satu kunci per isi keranjang) agar percobaan ulang tidak membuat transaksi ganda.
 - Tab **Riwayat**: daftar transaksi (pagination, pull-to-refresh) dan detail item/pembayaran.
 - Checkout memerlukan koneksi (server-authoritative). Antrean transaksi offline termasuk P2.
+
+## Cetak Struk (Printer Thermal)
+
+Didukung **Bluetooth SPP**, **USB (OTG)**, dan **WiFi/LAN (TCP 9100)** lewat plugin
+`@devlas/capacitor-thermal-printer` (mengirim bytes ESC/POS mentah). Pencetakan hanya aktif di
+aplikasi Android; di browser struk ditampilkan sebagai **pratinjau** teks.
+
+- Buka **ikon printer** di tab **Riwayat** (atau di tab **Kasir**).
+- Pilih **lebar kertas** (58 mm = 32 kolom, 80 mm = 48 kolom), isi nama toko/alamat/footer.
+- Pilih **jenis koneksi**:
+  - **Bluetooth**: pasangkan printer di pengaturan Android dulu, lalu "Cari perangkat" dan pilih printer.
+  - **USB (OTG)**: sambungkan printer, lalu "Cari perangkat". Izin USB diminta otomatis.
+  - **WiFi/LAN**: isi alamat IP printer dan port (default `9100`).
+- Tekan **Cetak uji** untuk memastikan printer bekerja, lalu **Simpan** sebagai printer default.
+- Cetak struk dari **detail transaksi** (Riwayat) atau langsung dari dialog sukses setelah **Bayar** (Kasir).
+- Cetak ulang tidak mengubah transaksi — struk selalu dirender dari snapshot transaksi di server.
+
+Struk dibuat oleh encoder lokal (`mobile/src/lib/receipt`) yang memisahkan model layout dari
+renderer, sehingga lebar 58/80 mm bisa diuji otomatis tanpa perangkat keras
+(`npm run test.unit`).
+
+> **Belum diverifikasi di perangkat fisik.** Karena lingkungan pengembangan ini tidak punya
+> Android SDK/printer, langkah build + uji cetak nyata ada di
+> [PLAN.md §10.5](./PLAN.md). Catatan: plugin menarik `usb-serial-for-android` (JitPack) dan
+> `kotlin-stdlib` 2.2.10 — sesuaikan versi Gradle/Kotlin bila build native pertama konflik.
 
