@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -51,5 +52,75 @@ class CategoryControllerTest extends TestCase
         $this->postJson('/api/v1/categories', ['name' => 'Makanan'])
             ->assertStatus(422)
             ->assertJsonStructure(['error' => ['details' => ['name']]]);
+    }
+
+    public function test_update_renames_a_category(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->for($user)->create(['name' => 'Minuman']);
+        Sanctum::actingAs($user);
+
+        $this->patchJson("/api/v1/categories/{$category->id}", ['name' => 'Minuman Dingin'])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Minuman Dingin');
+
+        $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'Minuman Dingin']);
+    }
+
+    public function test_update_keeps_the_current_name_unchanged(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->for($user)->create(['name' => 'Minuman']);
+        Sanctum::actingAs($user);
+
+        $this->patchJson("/api/v1/categories/{$category->id}", ['name' => 'Minuman'])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Minuman');
+    }
+
+    public function test_update_rejects_a_name_already_used_by_another_category(): void
+    {
+        $user = User::factory()->create();
+        Category::factory()->for($user)->create(['name' => 'Minuman']);
+        $target = Category::factory()->for($user)->create(['name' => 'Makanan']);
+        Sanctum::actingAs($user);
+
+        $this->patchJson("/api/v1/categories/{$target->id}", ['name' => 'Minuman'])
+            ->assertStatus(422)
+            ->assertJsonStructure(['error' => ['details' => ['name']]]);
+    }
+
+    public function test_update_returns_404_for_another_users_category(): void
+    {
+        $category = Category::factory()->create(['name' => 'Minuman']);
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->patchJson("/api/v1/categories/{$category->id}", ['name' => 'Bukan Milikku'])
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'Minuman']);
+    }
+
+    public function test_destroy_deletes_a_category_and_uncategorises_its_products(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->for($user)->create();
+        $product = Product::factory()->for($user)->create(['category_id' => $category->id]);
+        Sanctum::actingAs($user);
+
+        $this->deleteJson("/api/v1/categories/{$category->id}")->assertNoContent();
+
+        $this->assertDatabaseMissing('categories', ['id' => $category->id]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'category_id' => null]);
+    }
+
+    public function test_destroy_returns_404_for_another_users_category(): void
+    {
+        $category = Category::factory()->create();
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->deleteJson("/api/v1/categories/{$category->id}")->assertStatus(404);
+
+        $this->assertDatabaseHas('categories', ['id' => $category->id]);
     }
 }
