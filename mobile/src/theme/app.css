@@ -536,6 +536,49 @@ select.input {
   }
 }
 
+/* Tombol mikrofon bulat besar di bawah "Pindai Barcode": bisa ditekan tanpa
+   mengarahkan pandangan, jadi ukurannya sengaja besar dan letaknya di tengah. */
+.voice-fab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.voice-fab__btn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 1.5px solid var(--app-blue);
+  background: var(--app-surface);
+  color: var(--app-blue);
+  font-size: 30.6px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: var(--app-shadow);
+}
+
+.voice-fab__btn:disabled {
+  border-color: var(--app-line-strong);
+  color: var(--app-faint);
+  cursor: default;
+}
+
+.voice-fab__btn--on,
+.voice-fab__btn--on:disabled {
+  border-color: var(--app-blue);
+  color: var(--app-blue);
+  animation: voice-pulse 1.1s ease-in-out infinite;
+}
+
+.voice-fab__caption {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 11.7px;
+}
+
 /* --- Search results popup (POS) ------------------------------------------
    Results float over the cart instead of pushing it down the page. */
 
@@ -1123,6 +1166,11 @@ select.input {
 
   .search__voice--on,
   .search__voice--on:disabled {
+    animation: none;
+  }
+
+  .voice-fab__btn--on,
+  .voice-fab__btn--on:disabled {
     animation: none;
   }
 }

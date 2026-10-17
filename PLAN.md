@@ -212,9 +212,9 @@ mulai dari nol: keranjang kosong dan tidak ada sisa data server akun sebelumnya 
 | Elemen | Perilaku |
 |---|---|
 | View finder | Kamera **langsung di dalam app** (pratinjau + pindai otomatis); tombol **Pindai Barcode** tetap membuka UI kamera native ML Kit sebagai cara kedua |
-| Search bar | Cari nama/SKU, debounce 300 ms |
-| Tombol mikrofon | Sekali ketuk lalu sebutkan nama produk ("susu"); teksnya mengisi kolom pencarian dan pencarian berjalan seperti biasa |
-| Hasil pencarian | Daftar produk (nama, SKU, harga) |
+| Search bar | Cari nama/SKU, debounce 300 ms; hasilnya muncul sebagai **popup melayang** di bawah kolom — viewfinder dan tombol pindai tidak ikut bergeser |
+| Tombol mikrofon | Dua tempat: kecil di dalam kolom pencarian, dan **bulat besar di tengah bawah viewfinder** supaya bisa ditekan tanpa mengarahkan pandangan. Sekali ketuk, sebutkan nama produk ("susu"); teksnya mengisi kolom pencarian dan pencarian berjalan seperti biasa |
+| Hasil pencarian | Popup melayang (pola yang sama dengan POS): daftar produk (nama, SKU, harga) + keadaan kosong, ditutup lewat tombol silang, tap di luar, atau `Esc` |
 | Kartu hasil | Nama, harga besar, SKU, satuan, tombol **Tambahkan ke Keranjang** |
 | State "tidak ditemukan" | Pesan jelas + tombol **Tambah produk** (SKU terisi otomatis) |
 | Error state | Izin kamera ditolak / scanner gagal / jaringan putus |
@@ -250,11 +250,12 @@ mulai dari nol: keranjang kosong dan tidak ada sisa data server akun sebelumnya 
 > tombol **Pindai ulang** dan **Tambah produk baru**) sementara kamera tetap berjalan;
 > pencarian kode berikutnya langsung dilaporkan tanpa me-restart kamera.
 >
-> **Pencarian suara.** Tombol mikrofon di dalam kolom pencarian: sekali ketuk, sebut
-> nama produknya, lalu daftar produk muncul — tanpa mengetik, yang berguna saat tangan
-> sibuk memegang barang. Yang dikerjakan fitur ini hanya **ucapan → teks**: setelah teksnya
-> masuk ke kolom pencarian, pencariannya menempuh jalur yang sama dengan pencarian ketik,
-> sehingga daftar dan harga tetap datang dari server (satu pintu, §3).
+> **Pencarian suara.** Tombol mikrofon di dalam kolom pencarian dan satu tombol **bulat besar
+> di tengah bawah viewfinder** (yang di bawah bisa ditekan tanpa mengarahkan pandangan karena
+> posisinya tetap): sekali ketuk, sebut nama produknya, lalu daftar produk muncul — tanpa
+> mengetik, yang berguna saat tangan sibuk memegang barang. Yang dikerjakan fitur ini hanya
+> **ucapan → teks**: setelah teksnya masuk ke kolom pencarian, pencariannya menempuh jalur yang
+> sama dengan pencarian ketik, sehingga daftar dan harga tetap datang dari server (satu pintu, §3).
 >
 > - WebView Android tidak menyediakan Web Speech API, jadi di perangkat dipakai plugin
 >   native `@capacitor-community/speech-recognition` (dialog pengenal suara bawaan Google,

@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { productsApi, type ProductInput } from '../api/products';
+import { digitsOnly, formatThousands } from '../lib/format';
 import { ApiError, describeDetails } from '../lib/http';
 import { saveProduct } from '../lib/offline/products';
 import { productKeys } from '../lib/queryKeys';
@@ -267,13 +268,16 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   name="selling_price"
                   render={({ field, fieldState }) => (
                     <>
+                      {/* type="text" + inputMode: nilainya ditampilkan dengan
+                          pemisah ribuan ("20.000"), jadi tidak boleh number.
+                          Yang disimpan tetap angka polos. */}
                       <input
                         className="input"
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        min={0}
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
+                        autoComplete="off"
+                        value={formatThousands(field.value)}
+                        onChange={(e) => field.onChange(digitsOnly(e.target.value))}
                         onBlur={field.onBlur}
                         placeholder="0"
                         aria-invalid={fieldState.invalid}

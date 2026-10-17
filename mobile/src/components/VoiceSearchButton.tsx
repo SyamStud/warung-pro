@@ -5,21 +5,31 @@ import { VoiceError, voiceService } from '../services/voice';
 
 interface VoiceSearchButtonProps {
   disabled?: boolean;
+  /** `inline` = kecil di dalam kolom pencarian; `circle` = bulat besar di bawah viewfinder. */
+  variant?: 'inline' | 'circle';
+  /** Nama tombol untuk pembaca layar. */
+  label?: string;
   /** Teks hasil ucapan, sudah bersih dari kata perintah ("cari", "harga", …). */
   onResult: (text: string) => void;
   onError: (error: VoiceError) => void;
 }
 
 /**
- * Tombol mikrofon di dalam kolom pencarian Cek Harga.
+ * Tombol mikrofon pencarian suara.
  *
  * Sekali ketuk = sekali bicara: pengenal suara menutup sendiri setelah pemakai
  * berhenti, lalu teksnya dikembalikan ke halaman. Halaman yang mengisi kolom
  * pencarian, sehingga pencarian suara dan pencarian ketik menempuh jalur yang
  * sama persis.
+ *
+ * Halaman Cek Harga memakai dua-duanya: yang kecil menemani ibu jari yang
+ * sedang mengetik, yang bulat besar di bawah viewfinder supaya bisa ditekan
+ * tanpa mengarahkan pandangan.
  */
 const VoiceSearchButton: React.FC<VoiceSearchButtonProps> = ({
   disabled = false,
+  variant = 'inline',
+  label = 'Cari dengan suara',
   onResult,
   onError,
 }) => {
@@ -38,11 +48,16 @@ const VoiceSearchButton: React.FC<VoiceSearchButtonProps> = ({
     }
   };
 
+  const className =
+    variant === 'circle'
+      ? `voice-fab__btn${listening ? ' voice-fab__btn--on' : ''}`
+      : `search__voice${listening ? ' search__voice--on' : ''}`;
+
   return (
     <button
       type="button"
-      className={`search__voice${listening ? ' search__voice--on' : ''}`}
-      aria-label={listening ? 'Mendengarkan, sebutkan nama produk' : 'Cari dengan suara'}
+      className={className}
+      aria-label={listening ? `${label} — sedang mendengarkan` : label}
       aria-busy={listening}
       disabled={disabled || listening}
       onClick={() => void listen()}

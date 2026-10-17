@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   IonContent,
   IonIcon,
@@ -36,6 +36,7 @@ import { applyOverlay } from '../lib/offline/products';
 import { useOutbox } from '../hooks/useOutbox';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
 import { ScannerError, scannerService } from '../services/scanner';
+import type { VoiceError } from '../services/voice';
 import type { Product } from '../types';
 
 /**
@@ -44,7 +45,11 @@ import type { Product } from '../types';
  * Two ways to scan: the viewfinder streams the camera inside the app
  * (`LiveScanner`), and the **Pindai Barcode** button still opens the native
  * ML Kit camera. The search field sits above both, and its microphone button
- * lets the user say the product name instead of typing it.
+ * — plus a large round one under the viewfinder — lets the user say the
+ * product name instead of typing it.
+ *
+ * Search results float over the viewfinder in a popup (the same pattern as the
+ * POS screen) instead of pushing the camera and its buttons down the page.
  *
  * A barcode the catalog does not know is answered **in the page**, not with a
  * modal: the camera keeps running and `rearmKey` clears the scanner's memory,
@@ -60,6 +65,11 @@ const PriceChecker: React.FC = () => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
   const trimmedSearch = debouncedSearch.trim();
+
+  /** Results float over the viewfinder until dismissed or a product is picked. */
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLIonContentElement>(null);
 
   const [result, setResult] = useState<Product | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -93,10 +103,50 @@ const PriceChecker: React.FC = () => {
   const showToast = (message: string, color: string = 'success') =>
     presentToast({ message, duration: 2000, color, position: 'top' });
 
+  const closeResults = () => setResultsOpen(false);
+
+  /** Pick a result: the page switches to that product's price card. */
+  const selectResult = (product: Product) => {
+    setResult(product);
+    setResultsOpen(false);
+  };
+
   const openNewProduct = (sku?: string) => {
     setFormSku(sku);
     setFormOpen(true);
+    setResultsOpen(false);
   };
+
+  /**
+   * Hasil ucapan mengisi kolom pencarian, jadi pencariannya lewat jalur yang
+   * sama dengan pencarian ketik. Tombol bulat besar berada di bawah viewfinder
+   * sementara hasilnya muncul di atas, jadi halaman dinaikkan lebih dulu.
+   */
+  const handleVoiceResult = (text: string) => {
+    setResult(null);
+    setMiss(null);
+    setSearch(text);
+    setResultsOpen(text.trim() !== '');
+    showToast(`Mendengar: "${text}"`, 'medium');
+    void contentRef.current?.scrollToTop(300);
+  };
+
+  const handleVoiceError = (error: VoiceError) =>
+    showToast(error.message, error.reason === 'permission' ? 'warning' : 'danger');
+
+  // Tap outside the search field to dismiss the popup.
+  useEffect(() => {
+    if (!resultsOpen) return;
+
+    const dismiss = (event: PointerEvent) => {
+      if (!searchWrapRef.current?.contains(event.target as Node)) {
+        setResultsOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [resultsOpen]);
 
   const lookupCode = async (code: string) => {
     try {
@@ -104,6 +154,7 @@ const PriceChecker: React.FC = () => {
       setResult(data);
       setSearch('');
       setMiss(null);
+      setResultsOpen(false);
     } catch (error) {
       const notFound = error instanceof ApiError && error.code === 'NOT_FOUND';
       const offline = error instanceof ApiError && error.code === 'NETWORK_ERROR';
@@ -114,12 +165,14 @@ const PriceChecker: React.FC = () => {
         if (queued) {
           setResult(queued);
           setMiss(null);
+          setResultsOpen(false);
           return;
         }
 
         // Reported in the page: the camera keeps running, so the user can aim
         // again right away instead of being stuck behind a modal.
         setMiss({ code, reason: notFound ? 'not-found' : 'offline' });
+        setResultsOpen(false);
         return;
       }
       showToast(error instanceof ApiError ? error.message : 'Gagal mencari produk.', 'danger');
@@ -172,7 +225,7 @@ const PriceChecker: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent>
+      <IonContent ref={contentRef}>
         <PageHeader title="Cek Harga" backHref="/tabs/home" actions={<SyncStatus />} />
 
         <ConnectionBanner />
@@ -180,77 +233,107 @@ const PriceChecker: React.FC = () => {
         <div className="screen">
           {result === null ? (
             <>
-              <div className="search" style={{ marginTop: 4 }}>
-                <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Ketik atau ucapkan nama produk"
-                  aria-label="Cari produk"
-                />
-                {search !== '' && (
-                  <button
-                    type="button"
-                    className="search__clear"
-                    aria-label="Hapus pencarian"
-                    onClick={() => setSearch('')}
-                  >
-                    <IonIcon icon={closeCircle} />
-                  </button>
-                )}
-                <VoiceSearchButton
-                  disabled={scanning}
-                  onResult={(text) => {
-                    // Hasil ucapan mengisi kolom pencarian, jadi pencariannya
-                    // lewat jalur yang sama dengan pencarian ketik.
-                    setResult(null);
-                    setMiss(null);
-                    setSearch(text);
-                    showToast(`Mendengar: "${text}"`, 'medium');
-                  }}
-                  onError={(error) =>
-                    showToast(error.message, error.reason === 'permission' ? 'warning' : 'danger')
-                  }
-                />
-              </div>
-
-              {trimmedSearch !== '' && resultsQuery.isLoading && (
-                <div className="spinner-center">
-                  <IonSpinner name="crescent" />
-                </div>
-              )}
-
-              {searchError && <IonNote className="note note--error">{searchError}</IonNote>}
-
-              {trimmedSearch !== '' &&
-                !resultsQuery.isLoading &&
-                !searchError &&
-                visibleResults.length === 0 && (
-                  <div className="card empty-state" style={{ marginTop: 16 }}>
-                    <p className="empty-state__title">Produk tidak ditemukan</p>
-                    <p className="empty-state__text">
-                      {looksLikeCode
-                        ? 'Kode ini belum terdaftar di katalog.'
-                        : 'Coba kata kunci lain atau tambahkan produk baru.'}
-                    </p>
+              <div className="search-wrap" ref={searchWrapRef}>
+                <div className="search" style={{ marginTop: 4 }}>
+                  <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
+                  <input
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setResultsOpen(e.target.value.trim() !== '');
+                    }}
+                    onFocus={() => setResultsOpen(trimmedSearch !== '')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setResultsOpen(false);
+                    }}
+                    placeholder="Ketik atau ucapkan nama produk"
+                    aria-label="Cari produk"
+                  />
+                  {search !== '' && (
                     <button
                       type="button"
-                      className="btn btn--outline"
-                      style={{ marginTop: 14 }}
-                      onClick={() => openNewProduct(looksLikeCode ? trimmedSearch : undefined)}
+                      className="search__clear"
+                      aria-label="Hapus pencarian"
+                      onClick={() => {
+                        setSearch('');
+                        setResultsOpen(false);
+                      }}
                     >
-                      <IonIcon icon={addCircleOutline} /> Tambah produk baru
+                      <IonIcon icon={closeCircle} />
                     </button>
-                  </div>
-                )}
-
-              {visibleResults.length > 0 && (
-                <div className="list-stack" style={{ marginTop: 14 }}>
-                  {visibleResults.map((product) => (
-                    <ProductRow key={product.id} product={product} onClick={() => setResult(product)} />
-                  ))}
+                  )}
+                  <VoiceSearchButton
+                    disabled={scanning}
+                    onResult={handleVoiceResult}
+                    onError={handleVoiceError}
+                  />
                 </div>
-              )}
+
+                {resultsOpen && (
+                  <>
+                    <div
+                      className="search-pop__backdrop"
+                      aria-hidden="true"
+                      onClick={closeResults}
+                    />
+
+                    <div className="search-pop" role="region" aria-label="Hasil pencarian">
+                      <div className="search-pop__head">
+                        <span className="search-pop__title">Hasil pencarian</span>
+                        <button
+                          type="button"
+                          className="search-pop__close"
+                          aria-label="Tutup hasil pencarian"
+                          onClick={closeResults}
+                        >
+                          <IonIcon icon={closeCircle} />
+                        </button>
+                      </div>
+
+                      <div className="search-pop__body">
+                        {resultsQuery.isLoading && (
+                          <div className="spinner-center">
+                            <IonSpinner name="crescent" />
+                          </div>
+                        )}
+
+                        {searchError && <IonNote className="note note--error">{searchError}</IonNote>}
+
+                        {!resultsQuery.isLoading &&
+                          !searchError &&
+                          visibleResults.length === 0 && (
+                            <div className="empty-state">
+                              <p className="empty-state__title">Produk tidak ditemukan</p>
+                              <p className="empty-state__text">
+                                {looksLikeCode
+                                  ? 'Kode ini belum terdaftar di katalog.'
+                                  : 'Coba kata kunci lain atau tambahkan produk baru.'}
+                              </p>
+                              <button
+                                type="button"
+                                className="btn btn--outline"
+                                style={{ marginTop: 14 }}
+                                onClick={() =>
+                                  openNewProduct(looksLikeCode ? trimmedSearch : undefined)
+                                }
+                              >
+                                <IonIcon icon={addCircleOutline} /> Tambah produk baru
+                              </button>
+                            </div>
+                          )}
+
+                        {visibleResults.map((product) => (
+                          <ProductRow
+                            key={product.id}
+                            product={product}
+                            onClick={() => selectResult(product)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
 
               <div className="or-split">
                 <span>atau pindai barcode</span>
@@ -313,6 +396,17 @@ const PriceChecker: React.FC = () => {
               <p className="viewfinder__note">
                 Membuka kamera penuh bawaan Google (ML Kit)
               </p>
+
+              <div className="voice-fab">
+                <VoiceSearchButton
+                  variant="circle"
+                  label="Ucapkan nama produk"
+                  disabled={scanning}
+                  onResult={handleVoiceResult}
+                  onError={handleVoiceError}
+                />
+                <p className="voice-fab__caption">Ucapkan nama produk</p>
+              </div>
             </>
           ) : (
             <>

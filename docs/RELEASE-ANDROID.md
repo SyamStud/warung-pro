@@ -158,12 +158,17 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
       tidak terjangkau (hanya logout atau `401` yang memaksa login ulang).
 - [ ] Beranda: sapaan, kartu aksi cepat, produk terbaru.
 - [ ] Tambah produk (SKU digenerate, diketik manual, dan diisi dari scan), edit, arsipkan.
+- [ ] Kolom **Harga jual** menampilkan titik per ribuan saat diketik (“20.000”) dan tersimpan
+      sebagai angka yang benar; menempeel “Rp 1.250.000” dari clipboard juga dirapikan.
 - [ ] SKU yang diarsipkan bisa dipakai ulang untuk produk baru.
 - [ ] Pindai barcode → harga benar; kode tak dikenal → tawaran tambah produk (SKU terisi).
 - [ ] Cari di **Cek Harga** dan **Katalog Produk**; urutkan katalog (Terbaru/Nama/Harga).
-- [ ] Cek Harga: tombol **mikrofon** → izin mikrofon diminta sekali → sebut “susu” → kolom
-      pencarian terisi dan daftar produk bermunculan. Coba juga “cari susu” (kata perintahnya
-      harus dibuang). Tolak izinnya sekali → muncul pesan yang menjelaskan, bukan gagal diam.
+- [ ] Cek Harga: tombol **mikrofon** (kecil di kolom pencarian, dan yang **bulat besar** di bawah
+      **Pindai Barcode**) → izin mikrofon diminta sekali → sebut “susu” → kolom pencarian terisi
+      dan daftar produk bermunculan sebagai popup. Coba juga “cari susu” (kata perintahnya harus
+      dibuang). Tolak izinnya sekali → muncul pesan yang menjelaskan, bukan gagal diam.
+- [ ] Cek Harga: daftar hasil muncul melayang dan **viewfinder tidak bergeser**; popup bisa
+      ditutup lewat silang, tap di luar, atau `Esc`.
 - [ ] Halaman Cek Harga / Pembayaran / Struk / Notifikasi tidak menampilkan tab bar.
 - [ ] Cek Harga: pratinjau kamera hidup di dalam app dan hasil pindai langsung muncul; tombol
       **Pindai Barcode** (UI kamera native ML Kit) juga masih berfungsi. Saat izin kamera

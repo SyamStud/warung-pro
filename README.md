@@ -388,7 +388,7 @@ tersembunyi): **Cek Harga**, **Pembayaran**, **Preview Struk**, **Kelola Kategor
 |---|---|
 | **Beranda** | Sapaan + **lonceng Notifikasi** (bertanda titik bila ada kabar belum dibuka), 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru, dan kartu **Akun** (nama · email · **Keluar**) |
 | **Notifikasi** | Kabar aplikasi — hari ini kabar versi baru (catatan rilis · ukuran · tanggal terbit) dengan tombol **Perbarui**/**Nanti**; ada keadaan kosong bila belum ada kabar |
-| **Cek Harga** | Pencarian nama/SKU, **tombol mikrofon** (ucapkan nama produk, mis. “susu”), viewfinder dengan **kamera langsung di dalam app** (memindai hanya area bingkai) + **beep & getar** saat terbaca, tombol **Pindai Barcode** (kamera native ML Kit), panel **belum terdaftar** dengan **Pindai ulang**, kartu hasil + **Tambahkan ke Keranjang** |
+| **Cek Harga** | Pencarian nama/SKU (hasilnya muncul sebagai **popup melayang**, viewfinder tidak bergeser), **tombol mikrofon** di kolom pencarian dan **tombol mic bulat besar** di bawah viewfinder (ucapkan nama produk, mis. “susu”), viewfinder dengan **kamera langsung di dalam app** (memindai hanya area bingkai) + **beep & getar** saat terbaca, tombol **Pindai Barcode** (kamera native ML Kit), panel **belum terdaftar** dengan **Pindai ulang**, kartu hasil + **Tambahkan ke Keranjang** |
 | **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+**; di kanan judul ada **impor dari Excel** dan tombol kategori (**Kelola Kategori**) |
 | **Kelola Kategori** | Tambah, ubah nama, dan hapus kategori. Menghapus kategori tidak menghapus produknya — produknya hanya jadi tanpa kategori |
 | **POS** | Pencarian/scan, hasil pencarian tampil sebagai popup di atas keranjang, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
@@ -407,7 +407,9 @@ di-bundle lokal lewat `@fontsource-variable/plus-jakarta-sans`, jadi tetap tampi
 Teks printer pada **Preview Struk** tetap monospace supaya kolom 32/48 karakter tidak bergeser.
 
 > Form produk memakai **satu kolom “SKU / Barcode”** dengan tombol generate (saran dari server)
-> dan tombol scan. Foto produk tidak dipakai di versi ini; kolom Catatan disembunyikan dari form
+> dan tombol scan. Kolom **Harga jual** menampilkan titik per ribuan selagi diketik (“20.000”),
+> tetapi angka yang dikirim ke server tetap polos (`20000`) — sama seperti kolom **Dibayar** di
+> halaman Pembayaran. Foto produk tidak dipakai di versi ini; kolom Catatan disembunyikan dari form
 > (kolom `notes` tetap ada di API).
 
 **Keluar** ada di kartu Akun pada Beranda, memakai dialog konfirmasi. Menekan Keluar mengakhiri
@@ -418,10 +420,12 @@ tersinkron dibuang — jumlahnya diberitahukan lebih dulu di dialog. Server teta
 berakhir.
 ## Pencarian Suara (Cek Harga)
 
-Tombol mikrofon di kolom pencarian halaman **Cek Harga**: sekali ketuk, sebutkan nama
-produknya (“susu”), lalu daftar produk bermunculan. Teksnya mengisi kolom pencarian, jadi
-pencariannya menempuh jalur yang sama dengan pencarian ketik — daftar dan harganya tetap
-datang dari server.
+Tombol mikrofon ada dua tempat di halaman **Cek Harga**: kecil di dalam kolom pencarian, dan
+**bulat besar di tengah bawah viewfinder** — yang besar bisa ditekan tanpa mengarahkan
+pandangan. Sekali ketuk, sebutkan nama produknya (“susu”), lalu daftar produk bermunculan
+sebagai popup melayang di bawah kolom pencarian, sehingga viewfinder dan tombol pindai tidak
+bergeser. Teksnya mengisi kolom pencarian, jadi pencariannya menempuh jalur yang sama dengan
+pencarian ketik — daftar dan harganya tetap datang dari server.
 
 - Di Android dipakai pengenal suara bawaan perangkat lewat
   `@capacitor-community/speech-recognition` (bahasa `id-ID`), karena WebView tidak menyediakan

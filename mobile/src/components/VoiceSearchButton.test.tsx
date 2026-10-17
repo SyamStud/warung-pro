@@ -72,3 +72,22 @@ test('tidak mendengarkan saat pemindai barcode sedang jalan', () => {
 
   expect(listen).not.toHaveBeenCalled();
 });
+
+test('tampil sebagai tombol bulat besar di bawah viewfinder', async () => {
+  listen.mockResolvedValue('susu');
+
+  render(
+    <VoiceSearchButton
+      variant="circle"
+      label="Ucapkan nama produk"
+      onResult={onResult}
+      onError={onError}
+    />,
+  );
+
+  const button = screen.getByRole('button', { name: 'Ucapkan nama produk' });
+  expect(button.className).toContain('voice-fab__btn');
+
+  fireEvent.click(button);
+  await waitFor(() => expect(onResult).toHaveBeenCalledWith('susu'));
+});
