@@ -30,3 +30,13 @@ export function digitsOnly(value: string): string {
 export function formatThousands(value: string): string {
   return digitsOnly(value).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
+
+/** Formats a byte count for humans, e.g. 36700160 -> "35 MB". */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '';
+
+  const mb = bytes / 1_048_576;
+  if (mb < 1) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+  return `${mb.toFixed(mb < 10 ? 1 : 0).replace('.', ',')} MB`;
+}

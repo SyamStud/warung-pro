@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AppReleaseController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ProductController;
@@ -9,6 +10,11 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');
+
+    // Public: an installed app checks for a newer build while it starts, before
+    // anyone has logged in.
+    Route::get('/app/release', [AppReleaseController::class, 'show'])->middleware('throttle:api');
+    Route::get('/app/release/download', [AppReleaseController::class, 'download'])->middleware('throttle:api');
 
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);

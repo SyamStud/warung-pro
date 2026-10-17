@@ -43,6 +43,11 @@ Warung/
   setelah diarsipkan, metode pembayaran Tunai/Non Tunai end-to-end, sistem desain biru baru, dan
   navigasi Splash → Login → 4 tab + halaman Cek Harga/Pembayaran/Struk). **Verifikasi perangkat
   menyusul.**
+- **Notifikasi pembaruan aplikasi:** selesai pada level kode & test (rilis APK disimpan di
+  backend lewat `php artisan release:publish`, endpoint publik `GET /app/release`, strip
+  *Versi x.y.z tersedia* + tombol **Perbarui**/**Nanti** di Beranda). Terverifikasi end-to-end di
+  browser: tawaran muncul, "Nanti" menutupnya (dan tetap tertutup setelah buka ulang), versi
+  berikutnya ditawarkan lagi, dan tombol Perbarui benar-benar mengunduh APK-nya.
 
 Semua fase MVP sudah dikerjakan. Sisa pekerjaan hanya verifikasi perangkat keras/Android yang
 memerlukan SDK dan printer fisik — lihat [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md).
@@ -186,8 +191,38 @@ Base URL: `/api/v1`. Endpoint yang sudah tersedia:
 | GET | `/transactions` | Daftar transaksi (`search`, `payment_method`, pagination) |
 | GET | `/transactions/{id}` | Detail transaksi |
 | GET | `/transactions/{id}/receipt` | Data untuk cetak struk |
+| GET | `/app/release` | Rilis aplikasi terbaru (publik) — dipakai notifikasi update di Beranda |
+| GET | `/app/release/download?version_code=` | Unduh berkas APK versi tersebut (publik) |
 
 Semua error memakai envelope `{ "error": { "code", "message", "details?" } }`.
+
+## Pembaruan Aplikasi (Notifikasi Update)
+
+Aplikasi dipasang sebagai APK, jadi pembaruan tidak datang sendiri. Setiap kali dibuka, aplikasi
+memeriksa `GET /app/release` dan membandingkan `version_code` terbaru di server dengan
+`versionCode` miliknya sendiri:
+
+- Ada versi lebih baru → Beranda menampilkan strip **Versi x.y.z tersedia** dengan catatan rilis,
+  ukuran berkas, tombol **Perbarui** (mengunduh APK-nya lewat browser) dan **Nanti** (menyembunyikan
+  versi itu sampai ada versi lebih baru lagi).
+- Belum ada rilis, offline, atau backend tidak menjawab → tidak ada notifikasi apa pun; aplikasi
+  berjalan seperti biasa.
+
+Menerbitkan versi baru (backend di laptop yang sama):
+
+```bash
+# 1. naikkan versionCode/versionName di mobile/android/app/build.gradle
+# 2. build APK → ~/Downloads/warung-pos-debug.apk
+cd backend
+php artisan release:publish ~/Downloads/warung-pos-debug.apk --notes="Perbaikan pemindai barcode"
+```
+
+`versionCode`/`versionName` dibaca otomatis dari proyek mobile. Perintah ini menyalin APK ke
+`storage/app/private/releases/` dan mencatatnya di tabel `app_releases`; aplikasi yang sudah
+terpasang akan langsung ditawari versi tersebut. Rincian lengkap:
+
+- [PLAN.md §16](./PLAN.md) — alur & endpoint notifikasi pembaruan
+- [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md) — menaikkan versi, signing, dan distribusi
 
 ## Layar & Navigasi
 

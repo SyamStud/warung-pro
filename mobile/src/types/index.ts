@@ -95,6 +95,21 @@ export interface Paginated<T> {
   };
 }
 
+/**
+ * A published build of this app (PLAN.md §16). `version_code` is the Android
+ * versionCode and the only field compared against the installed build.
+ */
+export interface AppRelease {
+  version_code: number;
+  version_name: string;
+  notes: string | null;
+  size_bytes: number;
+  sha256: string;
+  published_at: string | null;
+  /** Absolute URL pinned to this exact build. */
+  download_url: string;
+}
+
 /** Consistent API error envelope (PLAN.md §6.5). */
 export interface ApiErrorBody {
   error: {

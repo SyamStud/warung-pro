@@ -200,6 +200,8 @@ Email + kata sandi, tombol tampilkan/sembunyikan sandi, tombol **Masuk** biru. T
 
 Sapaan pengguna, **4 kartu aksi cepat** (Cek Harga · Tambah Produk · Kasir · Riwayat), dan daftar **Produk terbaru** dengan tautan *Lihat semua*.
 
+Saat server punya rilis aplikasi yang lebih baru, Beranda juga menampilkan strip **Versi x.y.z tersedia** dengan tombol **Perbarui** dan **Nanti** (lihat §16).
+
 ### 4.4 Cek Harga (pushed)
 
 | Elemen | Perilaku |
@@ -958,3 +960,56 @@ MVP selesai ketika pengguna dapat:
 10. Mencetak & mencetak ulang struk tanpa membuat transaksi duplikat.
 
 **Prioritas akhir:** selesaikan **katalog + Price Checker** dulu. Setelah inti stabil, kerjakan POS & printer. **Jangan** menambah manajemen stok atau fitur retail kompleks sebelum kebutuhan inti terpenuhi.
+
+---
+
+## 16. Distribusi APK & Notifikasi Pembaruan
+
+Aplikasi dipasang lewat APK (bukan Play Store), jadi pembaruan tidak datang dengan sendirinya.
+Alurnya:
+
+1. Naikkan `versionCode` & `versionName` di `mobile/android/app/build.gradle` (§3 `docs/RELEASE-ANDROID.md`).
+2. Build APK.
+3. Terbitkan ke backend:
+
+   ```bash
+   cd backend
+   php artisan release:publish ~/Downloads/warung-pos-debug.apk --notes="Perbaikan pemindai barcode"
+   ```
+
+   Perintah ini menyalin APK ke `storage/app/private/releases/`, dan mencatat `versionCode`,
+   `versionName`, catatan, ukuran, serta `sha256` di tabel `app_releases`. `versionCode` yang sama
+   akan **menggantikan** baris sebelumnya (berguna bila berkas perlu dibuild ulang), bukan membuat
+   baris baru.
+
+4. Setiap aplikasi yang terpasang memeriksa rilis terbaru **saat dibuka** (juga setelah buka ulang),
+   membandingkan `version_code` dengan `versionCode` dirinya, lalu menampilkan strip
+   **Versi x.y.z tersedia** di Beranda.
+
+Endpoint (keduanya publik — pemeriksaan terjadi sebelum pengguna login):
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/api/v1/app/release` | Rilis terbaru: `version_code`, `version_name`, `notes`, `size_bytes`, `sha256`, `published_at`, `download_url` |
+| GET | `/api/v1/app/release/download?version_code=` | Mengirim berkas APK versi tersebut; tanpa `version_code` = rilis terbaru |
+
+Perilaku di aplikasi:
+
+| Keadaan | Yang terjadi |
+|---|---|
+| Server punya `version_code` lebih besar | Strip tawaran muncul di Beranda (catatan rilis + ukuran berkas) |
+| Sudah versi terbaru | Tidak ada apa-apa |
+| Belum ada rilis / offline / backend tidak menjawab | Tidak ada apa-apa — aplikasi berjalan normal (kegagalan senyap) |
+| Menekan **Nanti** | Versi itu disembunyikan (disimpan per versi); versi berikutnya tetap ditawarkan |
+| Menekan **Perbarui** | APK diunduh lewat browser sistem, lalu pengguna menekan *Pasang* |
+
+Catatan:
+
+- `download_url` dibangun dari host permintaan, jadi tautan otomatis menunjuk ke alamat yang sama
+  dengan yang dipakai aplikasi mengakses API (mis. IP Tailscale) — tidak perlu diatur manual.
+- Unduhan diserahkan ke browser sistem karena Capacitor mengalihkan URL di luar origin aplikasi ke
+  browser. Tidak perlu plugin tambahan maupun izin *install unknown apps* untuk aplikasi ini.
+- Pembaruan hanya bisa **menimpa** aplikasi lama bila ditandatangani dengan **kunci yang sama**;
+  berpindah keystore (mis. dari debug ke release) memaksa pengguna memasang ulang.
+- **Belum termasuk:** push notification lewat FCM, sehingga notifikasi muncul walau aplikasi
+  tertutup (kandidat P2, §G).

@@ -16,3 +16,8 @@ export const transactionKeys = {
   list: (query: TransactionQuery = {}) => ['transactions', 'list', query] as const,
   detail: (id: number) => ['transactions', 'detail', id] as const,
 };
+
+export const appKeys = {
+  /** The newest build published on the server (update notice). */
+  release: ['app', 'release'] as const,
+};

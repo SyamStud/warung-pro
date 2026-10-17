@@ -71,10 +71,13 @@ Edit `mobile/android/app/build.gradle`:
 
 ```gradle
 versionCode 2          // naikkan 1 setiap rilis (harus selalu bertambah)
-versionName "1.1"      // versi yang ditampilkan ke pengguna
+versionName "1.1.0"    // versi yang ditampilkan ke pengguna
 ```
 
 `versionCode` tidak boleh turun, termasuk saat rilis ke Google Play.
+
+Setelah build selesai, terbitkan ke backend supaya aplikasi yang sudah terpasang ditawari versi
+baru — lihat §8.
 
 ---
 
@@ -188,6 +191,14 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 - [ ] Jaringan lambat/putus di tengah checkout → pesan jelas, tidak ada data separuh.
 - [ ] Token kedaluwarsa/logout di perangkat lain → app meminta login ulang.
 
+### Notifikasi pembaruan (PLAN.md §16)
+- [ ] Terbitkan satu rilis dengan `versionCode` lebih tinggi → buka aplikasi → strip
+      **Versi x.y.z tersedia** muncul di Beranda.
+- [ ] Tekan **Perbarui** → browser terbuka dan APK-nya terunduh → berkas bisa dipasang
+      (menimpa aplikasi lama, data & sesi login tetap ada).
+- [ ] Tekan **Nanti** → strip hilang dan tetap hilang setelah aplikasi dibuka ulang.
+- [ ] Matikan backend → aplikasi tetap jalan normal tanpa pesan error soal pembaruan.
+
 ---
 
 ## 7. Catatan Plugin Printer
@@ -214,3 +225,32 @@ dan `kotlin-stdlib` 2.2.10.
 
 - APK langsung: bagikan `app-release.apk` (aktifkan "Instal dari sumber tidak dikenal").
 - Google Play: unggah AAB ke **Internal testing** lebih dulu, lalu naikkan bertahap.
+
+### Notifikasi pembaruan (yang sudah terpasang ikut diberi tahu)
+
+Setelah APK di-build, terbitkan ke backend:
+
+```bash
+cd backend
+php artisan release:publish ~/Downloads/warung-pos-debug.apk --notes="Perbaikan pemindai barcode"
+```
+
+`versionCode`/`versionName` dibaca dari `mobile/android/app/build.gradle`; `--version-code` /
+`--version-name` bisa dipakai untuk menimpanya. Perintah ini menyalin APK ke
+`storage/app/private/releases/` dan mencatatnya di tabel `app_releases`.
+
+Mulai saat itu, setiap aplikasi yang terpasang dan terhubung ke backend akan menampilkan strip
+**Versi x.y.z tersedia** di Beranda saat dibuka, dengan tombol **Perbarui** (mengunduh APK lewat
+browser, lalu pengguna menekan *Pasang*) dan **Nanti** (menyembunyikan versi itu). Rinciannya di
+[PLAN.md §16](../PLAN.md).
+
+Hal yang perlu diingat:
+
+- Aplikasi membandingkan **`versionCode`**, bukan nama versi. Rilis dengan `versionCode` lebih kecil
+  atau sama tidak akan pernah ditawarkan.
+- Berkas APK disimpan di `backend/storage/app/private/releases/` (tidak ikut git, tidak perlu
+  symlink `public/storage`).
+- Selama backend tidak bisa dihubungi, tidak ada notifikasi apa pun — aplikasi tetap jalan normal.
+- Pembaruan menimpa aplikasi lama hanya bila ditandatangani dengan **kunci yang sama**. Kunci debug
+  sudah stabil per mesin; begitu pindah ke keystore rilis (§4), pengguna perlu memasang ulang sekali
+  (uninstall dulu).

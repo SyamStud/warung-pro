@@ -23,6 +23,7 @@ import PageHeader from '../components/PageHeader';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductRow from '../components/ProductRow';
 import SyncStatus from '../components/SyncStatus';
+import UpdateBanner from '../components/UpdateBanner';
 import { useAuth } from '../auth/useAuth';
 import { useOutbox } from '../hooks/useOutbox';
 import { categoryKeys, productKeys } from '../lib/queryKeys';
@@ -88,6 +89,8 @@ const Home: React.FC = () => {
         <PageHeader title="Beranda" hideBack actions={<SyncStatus />} />
 
         <ConnectionBanner />
+
+        <UpdateBanner />
 
         <div className="screen">
           <div className="greeting">
