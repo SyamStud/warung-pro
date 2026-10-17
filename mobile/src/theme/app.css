@@ -1209,6 +1209,53 @@ select.input {
   text-decoration: none;
 }
 
+/* Akun — info singkat + tombol Keluar di dasar Beranda. */
+.account-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.account-card__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.account-card__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+  font-size: 15.3px;
+  font-weight: 700;
+}
+
+.account-card__text {
+  min-width: 0;
+}
+
+.account-card__name {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+
+.account-card__email {
+  margin: 2px 0 0;
+  color: var(--app-muted);
+  font-size: 11.7px;
+  word-break: break-all;
+}
+
 /* Separator between the search field and the scanner on Cek Harga. */
 .or-split {
   display: flex;

@@ -190,6 +190,11 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 ### Ketahanan
 - [ ] Jaringan lambat/putus di tengah checkout → pesan jelas, tidak ada data separuh.
 - [ ] Token kedaluwarsa/logout di perangkat lain → app meminta login ulang.
+- [ ] Tombol **Keluar** di Beranda (kartu Akun) → konfirmasi muncul; "Batal" tetap masuk;
+      "Keluar" kembali ke halaman masuk.
+- [ ] Keluar saat ada perubahan produk yang belum tersinkron → dialog menyebut jumlahnya, dan
+      perubahan itu tidak terkirim ke akun berikutnya.
+- [ ] Masuk lagi setelah keluar → keranjang kosong (tidak mewarisi keranjang akun sebelumnya).
 
 ### Notifikasi pembaruan (PLAN.md §16)
 - [ ] Terbitkan satu rilis dengan `versionCode` lebih tinggi → buka aplikasi → strip

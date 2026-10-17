@@ -99,6 +99,19 @@ class Outbox {
     this.invalidate();
   }
 
+  /**
+   * Drops every queued change. Used when signing out: the queue belongs to the
+   * account that filled it, and the next account must never send those writes
+   * under its own token.
+   */
+  async clear(): Promise<void> {
+    const store = await getOutboxStore();
+    for (const item of this.items) await store.remove(item.id);
+    this.items = [];
+    this.emit();
+    this.invalidate();
+  }
+
   /** Move failed items back to pending and try again. */
   async retryFailed(): Promise<void> {
     const store = await getOutboxStore();

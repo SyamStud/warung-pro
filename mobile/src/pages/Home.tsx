@@ -5,12 +5,14 @@ import {
   IonNote,
   IonPage,
   IonSpinner,
+  useIonAlert,
   useIonToast,
 } from '@ionic/react';
 import {
   addCircleOutline,
   cartOutline,
   chevronForwardOutline,
+  logOutOutline,
   pricetagOutline,
   receiptOutline,
 } from 'ionicons/icons';
@@ -29,14 +31,16 @@ import { useOutbox } from '../hooks/useOutbox';
 import { categoryKeys, productKeys } from '../lib/queryKeys';
 import { ApiError } from '../lib/http';
 import { applyOverlay } from '../lib/offline/products';
+import { outbox } from '../lib/offline/outbox';
 
 /** 3 · Beranda — greeting, quick actions, and the newest products. */
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const { overlay } = useOutbox();
+  const { user, logout } = useAuth();
+  const { overlay, pendingCount, failedCount, conflictCount } = useOutbox();
   const [presentToast] = useIonToast();
+  const [presentAlert] = useIonAlert();
   const [formOpen, setFormOpen] = useState(false);
 
   const categoriesQuery = useQuery({
@@ -52,9 +56,34 @@ const Home: React.FC = () => {
   const products = applyOverlay(productsQuery.data?.data ?? [], overlay);
 
   const firstName = (user?.name ?? '').trim().split(/\s+/)[0] || 'Kak';
+  const unsynced = pendingCount + failedCount + conflictCount;
   const error =
     productsQuery.isError &&
     (productsQuery.error instanceof ApiError ? productsQuery.error.message : 'Gagal memuat produk.');
+
+  const confirmLogout = () => {
+    presentAlert({
+      header: 'Keluar dari akun ini?',
+      message:
+        unsynced > 0
+          ? `Ada ${unsynced} perubahan produk yang belum tersinkron. Keluar sekarang akan membuang perubahan itu.`
+          : 'Kamu perlu masuk lagi untuk memakai aplikasi.',
+      buttons: [
+        { text: 'Batal', role: 'cancel' },
+        {
+          text: 'Keluar',
+          role: 'destructive',
+          handler: () => {
+            void (async () => {
+              // The queue belongs to this account: never let the next one send it.
+              await outbox.clear();
+              await logout();
+            })();
+          },
+        },
+      ],
+    });
+  };
 
   const actions = [
     {
@@ -151,6 +180,26 @@ const Home: React.FC = () => {
                 onClick={() => navigate('/tabs/products')}
               />
             ))}
+          </div>
+
+          <div className="section-head">
+            <h2 className="section-head__title">Akun</h2>
+          </div>
+
+          <div className="card account-card">
+            <div className="account-card__who">
+              <span className="account-card__avatar" aria-hidden="true">
+                {firstName.charAt(0).toUpperCase()}
+              </span>
+              <div className="account-card__text">
+                <p className="account-card__name">{user?.name ?? 'Pengguna'}</p>
+                {user?.email && <p className="account-card__email">{user.email}</p>}
+              </div>
+            </div>
+
+            <button type="button" className="btn btn--danger btn--sm" onClick={confirmLogout}>
+              <IonIcon icon={logOutOutline} aria-hidden="true" /> Keluar
+            </button>
           </div>
         </div>
       </IonContent>

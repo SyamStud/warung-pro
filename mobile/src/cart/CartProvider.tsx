@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { transactionsApi } from '../api/transactions';
+import { useAuth } from '../auth/useAuth';
 import { DEFAULT_PAYMENT_METHOD, type PaymentMethod, type Product } from '../types';
 import {
   addProductToCart,
@@ -25,6 +26,7 @@ function uuid(): string {
  */
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
   const [lines, setLines] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState('');
@@ -60,6 +62,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setPaid('');
     setPaymentMethod(DEFAULT_PAYMENT_METHOD);
   }, []);
+
+  // A cart belongs to the person who built it: signing out — or being signed
+  // out by the server — empties it, so the next account never inherits a
+  // half-finished sale.
+  useEffect(() => {
+    if (!isAuthenticated) clear();
+  }, [isAuthenticated, clear]);
 
   const totals = useMemo(
     () => computeTotals(lines, Number(discount) || 0, Number(paid) || 0),

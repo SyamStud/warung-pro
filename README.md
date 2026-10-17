@@ -48,6 +48,11 @@ Warung/
   *Versi x.y.z tersedia* + tombol **Perbarui**/**Nanti** di Beranda). Terverifikasi end-to-end di
   browser: tawaran muncul, "Nanti" menutupnya (dan tetap tertutup setelah buka ulang), versi
   berikutnya ditawarkan lagi, dan tombol Perbarui benar-benar mengunduh APK-nya.
+- **Keluar / ganti akun:** selesai pada level kode & test (kartu Akun di Beranda dengan dialog
+  konfirmasi). Keluar menghapus token & profil, membersihkan cache data server, mengosongkan
+  keranjang, dan membuang antrean perubahan offline setelah jumlahnya diberitahukan. Terverifikasi
+  end-to-end di browser (9 pemeriksaan, termasuk masuk lagi → keranjang kosong dan perubahan
+  offline tidak terkirim).
 
 Semua fase MVP sudah dikerjakan. Sisa pekerjaan hanya verifikasi perangkat keras/Android yang
 memerlukan SDK dan printer fisik — lihat [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md).
@@ -231,7 +236,7 @@ tersembunyi): **Cek Harga**, **Pembayaran**, **Preview Struk**, dan **Kelola Kat
 
 | Layar | Isi |
 |---|---|
-| **Beranda** | Sapaan, 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru |
+| **Beranda** | Sapaan, 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru, dan kartu **Akun** (nama · email · **Keluar**) |
 | **Cek Harga** | Pencarian nama/SKU, viewfinder dengan **kamera langsung di dalam app** (memindai hanya area bingkai) + **beep & getar** saat terbaca, tombol **Pindai Barcode** (kamera native ML Kit), panel **belum terdaftar** dengan **Pindai ulang**, kartu hasil + **Tambahkan ke Keranjang** |
 | **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+**; tombol kategori di kanan judul membuka **Kelola Kategori** |
 | **Kelola Kategori** | Tambah, ubah nama, dan hapus kategori. Menghapus kategori tidak menghapus produknya — produknya hanya jadi tanpa kategori |
@@ -254,6 +259,12 @@ Teks printer pada **Preview Struk** tetap monospace supaya kolom 32/48 karakter 
 > dan tombol scan. Foto produk tidak dipakai di versi ini; kolom Catatan disembunyikan dari form
 > (kolom `notes` tetap ada di API).
 
+**Keluar** ada di kartu Akun pada Beranda, memakai dialog konfirmasi. Menekan Keluar mengakhiri
+sesi di perangkat: token & profil dihapus, cache data server dibersihkan (akun berikutnya tidak
+melihat sisa data akun sebelumnya), keranjang dikosongkan, dan perubahan produk yang belum
+tersinkron dibuang — jumlahnya diberitahukan lebih dulu di dialog. Server tetap dipanggil
+(`POST /auth/logout`) sebagai upaya terbaik; kalau perangkat sedang offline, sesi lokal tetap
+berakhir.
 ## POS (Kasir)
 
 - Tab **POS**: cari produk atau pindai barcode untuk menambah ke keranjang, atur kuantitas, lalu **Lanjut ke Pembayaran**. Hasil pencarian muncul sebagai **popup** di atas keranjang (latar digelapkan) sehingga daftar keranjang tidak bergeser; pilih produk untuk memasukkannya, dan kolom cari otomatis dikosongkan lagi. Keranjang disimpan di provider bersama (memori), jadi produk dari **Cek Harga** ikut masuk.

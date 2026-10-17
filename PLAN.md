@@ -202,6 +202,11 @@ Sapaan pengguna, **4 kartu aksi cepat** (Cek Harga · Tambah Produk · Kasir · 
 
 Saat server punya rilis aplikasi yang lebih baru, Beranda juga menampilkan strip **Versi x.y.z tersedia** dengan tombol **Perbarui** dan **Nanti** (lihat §16).
 
+Di dasar Beranda ada kartu **Akun** (nama + email) dengan tombol **Keluar**. Keluar memakai dialog
+konfirmasi; bila masih ada perubahan produk yang belum tersinkron, dialog menyebutkan jumlahnya
+karena keluar akan membuang perubahan itu. Setelah keluar, akun berikutnya di perangkat yang sama
+mulai dari nol: keranjang kosong dan tidak ada sisa data server akun sebelumnya (cache dibersihkan).
+
 ### 4.4 Cek Harga (pushed)
 
 | Elemen | Perilaku |

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { ApiError, api } from '../lib/http';
+import { queryClient } from '../lib/queryClient';
 import { clearSession, profileStore, tokenStore } from '../lib/tokenStore';
 import type { User } from '../types';
 import { AuthProvider } from './AuthProvider';
@@ -120,6 +121,7 @@ test('login menyimpan token dan profil', async () => {
 test('logout membersihkan sesi walau server tidak terjangkau', async () => {
   await tokenStore.set('token-1');
   await profileStore.set(demo);
+  queryClient.setQueryData(['products', 'list', {}], { data: [demo] });
   vi.mocked(api.get).mockResolvedValue({ data: demo });
   vi.mocked(api.post).mockRejectedValue(new ApiError(0, 'NETWORK_ERROR', 'putus'));
 
@@ -130,4 +132,7 @@ test('logout membersihkan sesi walau server tidak terjangkau', async () => {
 
   await waitFor(() => expect(state()).toBe('ready|anon|-'));
   await expect(tokenStore.get()).resolves.toBeNull();
+  // Cached rows belong to the account that left — the next person to sign in on
+  // this phone must not see them.
+  expect(queryClient.getQueryData(['products', 'list', {}])).toBeUndefined();
 });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, ApiError } from '../lib/http';
+import { queryClient } from '../lib/queryClient';
 import { clearSession, profileStore, tokenStore } from '../lib/tokenStore';
 import type { User } from '../types';
 import { AuthContext, type AuthContextValue } from './context';
@@ -12,6 +13,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [hasSession, setHasSession] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  /**
+   * Ends the session for good, and empties the cached server data with it:
+   * products and transactions belong to the account that just left, and a
+   * different person signing in on the same phone must never see them.
+   */
+  const endSession = useCallback(async () => {
+    setHasSession(false);
+    setUser(null);
+    await clearSession();
+    queryClient.clear();
+  }, []);
 
   // Bootstrap. A stored token means "already signed in": the cached profile is
   // restored right away so the app opens on the tabs, and `/me` only refreshes
@@ -44,16 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           error instanceof ApiError && (error.status === 401 || error.status === 403);
         if (!active || !rejected) return;
 
-        setHasSession(false);
-        setUser(null);
-        await clearSession();
+        await endSession();
       }
     })();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [endSession]);
 
   const startSession = useCallback(async ({ user: nextUser, token }: AuthResponse['data']) => {
     await tokenStore.set(token);
@@ -84,10 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Best-effort: the local session is dropped even when the server is away.
     }
-    await clearSession();
-    setUser(null);
-    setHasSession(false);
-  }, []);
+    await endSession();
+  }, [endSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
