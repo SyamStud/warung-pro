@@ -27,6 +27,7 @@ import ConnectionBanner from '../components/ConnectionBanner';
 import LiveScanner from '../components/LiveScanner';
 import PageHeader from '../components/PageHeader';
 import SyncStatus from '../components/SyncStatus';
+import VoiceSearchButton from '../components/VoiceSearchButton';
 import { useCart } from '../cart/useCart';
 import { formatRupiah } from '../lib/format';
 import { ApiError } from '../lib/http';
@@ -42,7 +43,8 @@ import type { Product } from '../types';
  *
  * Two ways to scan: the viewfinder streams the camera inside the app
  * (`LiveScanner`), and the **Pindai Barcode** button still opens the native
- * ML Kit camera. The search field sits above both.
+ * ML Kit camera. The search field sits above both, and its microphone button
+ * lets the user say the product name instead of typing it.
  *
  * A barcode the catalog does not know is answered **in the page**, not with a
  * modal: the camera keeps running and `rearmKey` clears the scanner's memory,
@@ -183,7 +185,7 @@ const PriceChecker: React.FC = () => {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Ketik nama atau SKU produk"
+                  placeholder="Ketik atau ucapkan nama produk"
                   aria-label="Cari produk"
                 />
                 {search !== '' && (
@@ -196,6 +198,20 @@ const PriceChecker: React.FC = () => {
                     <IonIcon icon={closeCircle} />
                   </button>
                 )}
+                <VoiceSearchButton
+                  disabled={scanning}
+                  onResult={(text) => {
+                    // Hasil ucapan mengisi kolom pencarian, jadi pencariannya
+                    // lewat jalur yang sama dengan pencarian ketik.
+                    setResult(null);
+                    setMiss(null);
+                    setSearch(text);
+                    showToast(`Mendengar: "${text}"`, 'medium');
+                  }}
+                  onError={(error) =>
+                    showToast(error.message, error.reason === 'permission' ? 'warning' : 'danger')
+                  }
+                />
               </div>
 
               {trimmedSearch !== '' && resultsQuery.isLoading && (

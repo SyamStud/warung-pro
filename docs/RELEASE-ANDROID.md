@@ -161,6 +161,9 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 - [ ] SKU yang diarsipkan bisa dipakai ulang untuk produk baru.
 - [ ] Pindai barcode → harga benar; kode tak dikenal → tawaran tambah produk (SKU terisi).
 - [ ] Cari di **Cek Harga** dan **Katalog Produk**; urutkan katalog (Terbaru/Nama/Harga).
+- [ ] Cek Harga: tombol **mikrofon** → izin mikrofon diminta sekali → sebut “susu” → kolom
+      pencarian terisi dan daftar produk bermunculan. Coba juga “cari susu” (kata perintahnya
+      harus dibuang). Tolak izinnya sekali → muncul pesan yang menjelaskan, bukan gagal diam.
 - [ ] Halaman Cek Harga / Pembayaran / Struk / Notifikasi tidak menampilkan tab bar.
 - [ ] Cek Harga: pratinjau kamera hidup di dalam app dan hasil pindai langsung muncul; tombol
       **Pindai Barcode** (UI kamera native ML Kit) juga masih berfungsi. Saat izin kamera

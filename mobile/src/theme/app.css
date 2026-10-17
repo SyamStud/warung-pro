@@ -497,6 +497,45 @@ select.input {
   padding: 0;
 }
 
+/* Tombol mikrofon (Cek Harga): biru supaya terbaca sebagai aksi, dan berdenyut
+   halus selagi mendengarkan. */
+.search__voice {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--app-blue);
+  font-size: 16.2px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  flex: none;
+}
+
+.search__voice:disabled {
+  color: var(--app-faint);
+  cursor: default;
+}
+
+.search__voice--on,
+.search__voice--on:disabled {
+  color: var(--app-blue);
+  animation: voice-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+}
+
 /* --- Search results popup (POS) ------------------------------------------
    Results float over the cart instead of pushing it down the page. */
 
@@ -1079,6 +1118,11 @@ select.input {
 
 @media (prefers-reduced-motion: reduce) {
   .viewfinder__laser {
+    animation: none;
+  }
+
+  .search__voice--on,
+  .search__voice--on:disabled {
     animation: none;
   }
 }

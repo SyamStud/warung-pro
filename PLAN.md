@@ -213,6 +213,7 @@ mulai dari nol: keranjang kosong dan tidak ada sisa data server akun sebelumnya 
 |---|---|
 | View finder | Kamera **langsung di dalam app** (pratinjau + pindai otomatis); tombol **Pindai Barcode** tetap membuka UI kamera native ML Kit sebagai cara kedua |
 | Search bar | Cari nama/SKU, debounce 300 ms |
+| Tombol mikrofon | Sekali ketuk lalu sebutkan nama produk ("susu"); teksnya mengisi kolom pencarian dan pencarian berjalan seperti biasa |
 | Hasil pencarian | Daftar produk (nama, SKU, harga) |
 | Kartu hasil | Nama, harga besar, SKU, satuan, tombol **Tambahkan ke Keranjang** |
 | State "tidak ditemukan" | Pesan jelas + tombol **Tambah produk** (SKU terisi otomatis) |
@@ -248,6 +249,25 @@ mulai dari nol: keranjang kosong dan tidak ada sisa data server akun sebelumnya 
 > untuk memindai lagi. Sekarang hasilnya muncul sebagai panel di halaman (SKU apa adanya,
 > tombol **Pindai ulang** dan **Tambah produk baru**) sementara kamera tetap berjalan;
 > pencarian kode berikutnya langsung dilaporkan tanpa me-restart kamera.
+>
+> **Pencarian suara.** Tombol mikrofon di dalam kolom pencarian: sekali ketuk, sebut
+> nama produknya, lalu daftar produk muncul — tanpa mengetik, yang berguna saat tangan
+> sibuk memegang barang. Yang dikerjakan fitur ini hanya **ucapan → teks**: setelah teksnya
+> masuk ke kolom pencarian, pencariannya menempuh jalur yang sama dengan pencarian ketik,
+> sehingga daftar dan harga tetap datang dari server (satu pintu, §3).
+>
+> - WebView Android tidak menyediakan Web Speech API, jadi di perangkat dipakai plugin
+>   native `@capacitor-community/speech-recognition` (dialog pengenal suara bawaan Google,
+>   bahasa `id-ID`, hasil akhir setelah pemakai selesai bicara). Di peramban (hanya untuk
+>   `npm run dev`) jalur Web Speech API dipakai sebagai gantinya.
+> - Izin `RECORD_AUDIO` dan `<queries>` untuk `android.speech.RecognitionService` sudah
+>   didaftarkan di `AndroidManifest.xml`.
+> - Hasil ucapan dibersihkan lebih dulu (`cleanTranscript`): spasi dirapikan, tanda baca di
+>   ujung dibuang, dan kata perintah di awal — "cari", "cari produk", "berapa harga" —
+>   dibuang, supaya "cari susu" mencari **susu**, bukan "cari susu".
+> - Kegagalannya dibedakan supaya pesannya bisa ditindaklanjuti: izin ditolak, tidak
+>   terdengar, pengenal suara butuh internet, atau perangkat tidak punya pengenal suara.
+>   Tidak ada satu pun yang memakai istilah teknis di layar.
 
 ### 4.5 Katalog Produk
 
@@ -898,6 +918,7 @@ di modul plugin tidak diwariskan ke `:app`.
 ### 12.3 Android Integration Tests
 
 - Izin kamera (diberikan / ditolak).
+- Izin mikrofon (diberikan / ditolak) untuk pencarian suara.
 - Scan valid / kode tidak terdaftar.
 - Navigasi scanner → detail produk.
 - Koneksi printer, test print, cetak & cetak ulang.
@@ -925,6 +946,7 @@ di modul plugin tidak diwariskan ke `:app`.
 - [ ] Struk tercetak pada printer yang didukung (Bluetooth / USB OTG / WiFi).
 - [ ] Kegagalan printer tidak menghilangkan transaksi (matikan printer saat mencetak).
 - [ ] Pemindaian kamera nyata dan perilaku izin kamera.
+- [ ] Pencarian suara dengan mikrofon perangkat (sebut nama produk, izin ditolak, tidak terdengar).
 - [ ] Antrean offline lintas restart aplikasi di Android.
 
 ---

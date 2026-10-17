@@ -23,6 +23,7 @@ Warung/
 - **Mobile:** Ionic React, TypeScript, Capacitor, React Router, TanStack Query, React Hook Form, Zod
 - **Backend:** Laravel, PostgreSQL, Laravel Sanctum
 - **Hardware:** Barcode scanner (kamera), printer thermal (Bluetooth SPP / USB OTG / WiFi) dengan ESC/POS
+- **Pencarian suara:** pengenal suara native perangkat lewat `@capacitor-community/speech-recognition` (bahasa Indonesia), di halaman Cek Harga
 - **Penyimpanan aman:** token auth di Android Keystore (AES-GCM); antrean offline di SQLite
 
 ## Status
@@ -61,6 +62,10 @@ Warung/
   keranjang, dan membuang antrean perubahan offline setelah jumlahnya diberitahukan. Terverifikasi
   end-to-end di browser (9 pemeriksaan, termasuk masuk lagi → keranjang kosong dan perubahan
   offline tidak terkirim).
+- **Pencarian suara di Cek Harga:** selesai pada level kode & test (tombol mikrofon, bahasa
+  Indonesia, pembersihan kata perintah, pesan galat yang bisa ditindaklanjuti untuk izin
+  ditolak / tidak terdengar / butuh internet / perangkat tanpa pengenal suara). **Uji mikrofon
+  pada perangkat fisik masih tertunda.**
 
 Semua fase MVP sudah dikerjakan. Sisa pekerjaan hanya verifikasi perangkat keras/Android yang
 memerlukan SDK dan printer fisik — lihat [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md).
@@ -383,7 +388,7 @@ tersembunyi): **Cek Harga**, **Pembayaran**, **Preview Struk**, **Kelola Kategor
 |---|---|
 | **Beranda** | Sapaan + **lonceng Notifikasi** (bertanda titik bila ada kabar belum dibuka), 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru, dan kartu **Akun** (nama · email · **Keluar**) |
 | **Notifikasi** | Kabar aplikasi — hari ini kabar versi baru (catatan rilis · ukuran · tanggal terbit) dengan tombol **Perbarui**/**Nanti**; ada keadaan kosong bila belum ada kabar |
-| **Cek Harga** | Pencarian nama/SKU, viewfinder dengan **kamera langsung di dalam app** (memindai hanya area bingkai) + **beep & getar** saat terbaca, tombol **Pindai Barcode** (kamera native ML Kit), panel **belum terdaftar** dengan **Pindai ulang**, kartu hasil + **Tambahkan ke Keranjang** |
+| **Cek Harga** | Pencarian nama/SKU, **tombol mikrofon** (ucapkan nama produk, mis. “susu”), viewfinder dengan **kamera langsung di dalam app** (memindai hanya area bingkai) + **beep & getar** saat terbaca, tombol **Pindai Barcode** (kamera native ML Kit), panel **belum terdaftar** dengan **Pindai ulang**, kartu hasil + **Tambahkan ke Keranjang** |
 | **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+**; di kanan judul ada **impor dari Excel** dan tombol kategori (**Kelola Kategori**) |
 | **Kelola Kategori** | Tambah, ubah nama, dan hapus kategori. Menghapus kategori tidak menghapus produknya — produknya hanya jadi tanpa kategori |
 | **POS** | Pencarian/scan, hasil pencarian tampil sebagai popup di atas keranjang, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
@@ -411,6 +416,24 @@ melihat sisa data akun sebelumnya), keranjang dikosongkan, dan perubahan produk 
 tersinkron dibuang — jumlahnya diberitahukan lebih dulu di dialog. Server tetap dipanggil
 (`POST /auth/logout`) sebagai upaya terbaik; kalau perangkat sedang offline, sesi lokal tetap
 berakhir.
+## Pencarian Suara (Cek Harga)
+
+Tombol mikrofon di kolom pencarian halaman **Cek Harga**: sekali ketuk, sebutkan nama
+produknya (“susu”), lalu daftar produk bermunculan. Teksnya mengisi kolom pencarian, jadi
+pencariannya menempuh jalur yang sama dengan pencarian ketik — daftar dan harganya tetap
+datang dari server.
+
+- Di Android dipakai pengenal suara bawaan perangkat lewat
+  `@capacitor-community/speech-recognition` (bahasa `id-ID`), karena WebView tidak menyediakan
+  Web Speech API. Di peramban web — hanya saat mengembangkan — dipakai Web Speech API.
+- Izin mikrofon diminta sekali saat pertama dipakai. Kalau ditolak, aplikasi memberi tahu cara
+  mengaktifkannya lagi, bukan gagal diam-diam.
+- Pengenal suara Google bekerja **online** dan baru ada bila perangkat punya layanan pengenal
+  suara (umumnya aplikasi Google). Tanpa itu tombolnya menjelaskan, dan pencarian ketik tetap
+  bisa dipakai.
+- Kata perintah di awal ucapan dibuang otomatis: “cari susu” dan “berapa harga susu” sama-sama
+  mencari **susu**.
+
 ## POS (Kasir)
 
 - Tab **POS**: cari produk atau pindai barcode untuk menambah ke keranjang, atur kuantitas, lalu **Lanjut ke Pembayaran**. Hasil pencarian muncul sebagai **popup** di atas keranjang (latar digelapkan) sehingga daftar keranjang tidak bergeser; pilih produk untuk memasukkannya, dan kolom cari otomatis dikosongkan lagi. Keranjang disimpan di provider bersama (memori), jadi produk dari **Cek Harga** ikut masuk.

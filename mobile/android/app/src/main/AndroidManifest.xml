@@ -41,4 +41,16 @@
     <!-- Barcode scanning (Phase 3) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- Pencarian suara di Cek Harga. Plugin @capacitor-community/speech-recognition
+         mendeklarasikan keduanya juga; manifest merger menyatukannya, jadi menulis
+         di sini hanya membuat izinnya terlihat dari proyek ini sendiri.
+         <queries> dibutuhkan sejak Android 11 agar SpeechRecognizer menemukan
+         layanan pengenal suara perangkat (biasanya aplikasi Google). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 </manifest>
