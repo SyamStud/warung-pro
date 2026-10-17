@@ -111,6 +111,7 @@ Bila produk yang sama diubah dari dua perangkat, perubahan **tidak** saling meni
 - Node.js >= 20, npm/pnpm
 - PHP >= 8.5, Composer
 - PostgreSQL >= 15 (produksi; lokal bisa pakai SQLite)
+- Docker + Docker Compose v2 (untuk menjalankan backend di server)
 - Android Studio + JDK 21 (untuk build Android; Capacitor 8 menargetkan Java 21)
 
 ## Menjalankan Backend
@@ -134,6 +135,60 @@ php artisan serve --host=0.0.0.0 --port=8000
 Untuk memakai PostgreSQL, set `DB_CONNECTION=pgsql` dan variabel `DB_*` di `.env`
 (lihat contoh di `backend/.env.example`), lalu jalankan `php artisan migrate`.
 
+## Deploy ke Server (Docker)
+
+Server yang dipakai sekarang adalah homeserver pribadi: `pos.syamlab.my.id` masuk lewat
+Cloudflare Tunnel ke **port 7001**, lalu diteruskan nginx di dalam container ke Laravel.
+
+```bash
+scripts/deploy-server.sh
+```
+
+Perintah itu:
+
+1. menyalin folder `backend/` ke server (tanpa `vendor`, `.env`, dan data lokal),
+2. membuat `backend/.env` **sekali saja** di server — `APP_KEY` dan sandi PostgreSQL
+   diacak di situ dan tidak pernah ditimpa lagi, karena bergantinya `APP_KEY`
+   membatalkan semua token yang beredar,
+3. menjalankan `docker compose up -d --build` di server,
+4. menunggu sampai API menjawab, lalu menampilkan status container.
+
+Setelan yang bisa diubah lewat variabel lingkungan: `WARUNG_SERVER` (default
+`homeserver@main`), `WARUNG_SERVER_DIR` (default `/home/homeserver/warung`),
+`WARUNG_BASE_URL` (default `https://pos.syamlab.my.id`), dan `WARUNG_TUNNEL_TOKEN`
+bila connector Cloudflare ikut dijalankan dari sini.
+
+Isi `backend/compose.yaml`:
+
+| Service | Isi |
+|---|---|
+| `app` | nginx + php-fpm dalam satu container; `7001:80`; volume `app-storage` untuk APK rilis, log, dan sesi |
+| `db` | PostgreSQL 17; hanya dijangkau `app`; volume `db-data` |
+| `tunnel` | connector Cloudflare (`--profile tunnel`); ikut jalan hanya kalau `TUNNEL_TOKEN` ada di `.env` |
+
+Beberapa hal yang sengaja begitu:
+
+- **Migrasi jalan sendiri** setiap container start; database yang masih kosong juga
+  langsung diisi akun demo (`demo@warung.test` / `password`).
+- **Tanpa `config:cache`.** Berkas `.env` hanya dibaca Laravel selama konfigurasi belum
+  ter-cache, jadi cache yang tertinggal di image bisa membuat perubahan `.env` diabaikan
+  pada deploy berikutnya. Di skala ini bedanya tidak terasa.
+- **Rilis aplikasi disimpan di server**, bukan di laptop: `scripts/rilis.sh` mengirim APK
+  ke container. Pakai `scripts/rilis.sh --lokal` untuk kembali menerbitkan ke backend lokal.
+
+### Cloudflare Tunnel
+
+Connector-nya ikut dijalankan kalau `TUNNEL_TOKEN` ada di `backend/.env` server:
+
+```bash
+WARUNG_TUNNEL_TOKEN='eyJ...' scripts/deploy-server.sh
+```
+
+Rute publiknya diatur di dashboard **Cloudflare Zero Trust → Networks → Tunnels**:
+`pos.syamlab.my.id` → `http://app:80` (nama service di jaringan Compose; alternatifnya
+`http://<ip-server>:7001`). Karena TLS diakhiri Cloudflare, `TRUSTED_PROXIES=*` sudah
+disetel di `compose.yaml` supaya Laravel melihat skema `https` yang benar.
+
 ## Menjalankan Mobile
 
 ```bash
@@ -151,24 +206,41 @@ npx cap open android       # buka di Android Studio
 > Saat menguji di emulator Android, `localhost` mengarah ke perangkat itu sendiri.
 > Gunakan `http://10.0.2.2:8000/api/v1` sebagai `VITE_API_BASE_URL`.
 
-### Menguji APK di HP (backend jalan di laptop)
+### Memasang APK di HP
+
+**Ke server — cara biasa.** `mobile/.env` berisi
+`VITE_API_BASE_URL=https://pos.syamlab.my.id/api/v1`, jadi build debug biasa sudah
+menunjuk ke server rumah dan tidak perlu akal-akalan HTTP polos:
+
+```bash
+npm run build
+npx cap sync android
+cd android && ./gradlew assembleDebug
+# APK: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Menerbitkan versi baru supaya HP yang sudah terpasang ikut diperbarui: lihat
+[Pembaruan Aplikasi](#pembaruan-aplikasi-notifikasi-update) dan
+[docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md).
+
+**Ke backend di laptop — hanya saat mengembangkan.** Backend lokal jalan di port 8000,
+jadi arahkan aplikasi ke alamat laptop:
 
 1. Jalankan backend di semua interface: `php artisan serve --host=0.0.0.0 --port=8000`.
 2. Set `VITE_API_BASE_URL` ke alamat laptop yang bisa dijangkau HP — IP LAN
    (mis. `http://192.168.1.14:8000/api/v1`) atau **IP Tailscale**
    (mis. `http://100.112.0.37:8000/api/v1`) bila HP juga terpasang Tailscale,
    sehingga bisa diuji dari jaringan mana pun.
-3. Build lalu pasang APK-nya:
+3. Build pakai sync khusus LAN:
 
 ```bash
 npm run build
 npm run sync:lan                                        # = CAP_ALLOW_HTTP=1 cap sync android
 cd android && ./gradlew assembleDebug
-# APK: mobile/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Halaman aplikasi dimuat dari `https://localhost` sementara API-nya masih HTTP polos,
-jadi dua hal perlu diizinkan — keduanya **hanya untuk build debug**:
+Halaman aplikasi dimuat dari `https://localhost` sementara API-nya HTTP polos, jadi dua
+hal perlu diizinkan — keduanya **hanya untuk build debug**:
 
 - `npm run sync:lan` menulis `allowMixedContent: true` ke `capacitor.config.json`
   (sync biasa tetap `false`).
@@ -232,23 +304,32 @@ Menerbitkan versi baru — satu perintah dari akar repo:
 scripts/rilis.sh "Perbaikan pemindai barcode"
 ```
 
-Skrip itu menaikkan `versionCode` + `versionName`, build APK, lalu menerbitkannya ke backend. Ia
-menolak jalan kalau `versionCode` tidak lebih baru dari rilis yang sudah terbit (aplikasi yang
-terpasang tidak akan ditawari) dan memilih sendiri JDK 21 yang dibutuhkan Capacitor. Opsi lain
-(`--release`, `--tanpa-terbit`, `--versi`, `--naik`): `scripts/rilis.sh --help`.
+Skrip itu menaikkan `versionCode` + `versionName` di proyek mobile, build APK, lalu
+**mengirimkannya ke server** dan menjalankan `release:publish` di container. Versi terbit
+sebelumnya dibaca dari database server, dan skrip menolak jalan kalau `versionCode` tidak lebih
+baru dari rilis yang sudah terbit (aplikasi yang terpasang tidak akan ditawari). Skripnya juga
+memilih sendiri JDK 21 yang dibutuhkan Capacitor. Pakai `scripts/rilis.sh --lokal "…"` bila
+backend-nya justru jalan di laptop. Opsi lain (`--release`, `--tanpa-terbit`, `--versi`, `--naik`):
+`scripts/rilis.sh --help`.
 
-Kalau lebih suka manual, ketiga langkah itu tetap bisa dijalankan sendiri:
+Kalau lebih suka manual, langkahnya tetap bisa dijalankan sendiri:
 
 ```bash
 # 1. naikkan versionCode/versionName di mobile/android/app/build.gradle
 # 2. build APK → ~/Downloads/warung-pos-debug.apk
-cd backend
-php artisan release:publish ~/Downloads/warung-pos-debug.apk --notes="Perbaikan pemindai barcode"
+# 3. kirim ke server dan terbitkan dari dalam container
+scp ~/Downloads/warung-pos-debug.apk homeserver@main:/home/homeserver/warung/incoming/apk
+ssh homeserver@main 'cd ~/warung/backend \
+  && docker compose cp ../../warung/incoming/apk app:/tmp/apk \
+  && docker compose exec -T app php artisan release:publish /tmp/apk \
+       --version-code=7 --version-name=1.1.5 --notes="Perbaikan pemindai barcode"'
 ```
 
-`versionCode`/`versionName` dibaca otomatis dari proyek mobile. Perintah ini menyalin APK ke
-`storage/app/private/releases/` dan mencatatnya di tabel `app_releases`; aplikasi yang sudah
-terpasang akan langsung ditawari versi tersebut. Rincian lengkap:
+Pada `release:publish`, `versionCode`/`versionName` dibaca otomatis dari proyek mobile bila
+tersedia (di server tidak, jadi kirim lewat `--version-code`/`--version-name` seperti contoh).
+Perintah itu menyalin APK ke `storage/app/private/releases/` **di server** dan mencatatnya di
+tabel `app_releases`; aplikasi yang sudah terpasang akan langsung ditawari versi tersebut.
+Rincian lengkap:
 
 - [PLAN.md §16](./PLAN.md) — alur & endpoint notifikasi pembaruan
 - [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md) — menaikkan versi, signing, dan distribusi

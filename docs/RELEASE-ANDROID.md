@@ -38,7 +38,14 @@ npx cap sync android
 `npx cap sync android` menyalin aset web ke proyek Android dan mendaftarkan plugin
 native (termasuk printer thermal). Jalankan setiap kali kode web berubah.
 
+`mobile/.env` menentukan API mana yang dipanggil. Untuk build yang dipasang di HP,
+arahkan ke server: `VITE_API_BASE_URL=https://pos.syamlab.my.id/api/v1` (lihat
+[PLAN.md §17](../PLAN.md) soal servernya).
+
 ### Build debug untuk server HTTP di jaringan (LAN / Tailscale)
+
+Hanya perlu bila menguji terhadap backend Laravel yang berjalan dengan HTTP polos di
+laptop — server produksi sudah HTTPS, jadi build debug biasa tidak butuh langkah ini.
 
 APK **release** wajib HTTPS (lihat §1). Untuk menguji build **debug** terhadap server
 Laravel yang berjalan dengan HTTP polos di laptop:
@@ -248,17 +255,23 @@ Cara tercepat — satu perintah dari akar repo:
 scripts/rilis.sh "Perbaikan pemindai barcode"
 ```
 
-Skrip itu menaikkan versi, build APK, dan menerbitkannya sekaligus (lihat `--help` untuk opsi).
-Langkah manualnya kalau diperlukan:
+Skrip itu menaikkan versi, build APK, dan menerbitkannya **ke server** (container Docker di
+`homeserver@main`) sekaligus — lihat `--help` untuk opsi, dan `--lokal` bila backend-nya justru
+jalan di laptop. Langkah manualnya kalau diperlukan:
 
 ```bash
-cd backend
-php artisan release:publish ~/Downloads/warung-pos-debug.apk --notes="Perbaikan pemindai barcode"
+# kirim APK ke server, lalu terbitkan dari dalam container
+scp ~/Downloads/warung-pos-debug.apk homeserver@main:/home/homeserver/warung/incoming/apk
+ssh homeserver@main 'cd ~/warung/backend \
+  && docker compose cp ../../warung/incoming/apk app:/tmp/apk \
+  && docker compose exec -T app php artisan release:publish /tmp/apk \
+       --version-code=7 --version-name=1.1.5 --notes="Perbaikan pemindai barcode"'
 ```
 
-`versionCode`/`versionName` dibaca dari `mobile/android/app/build.gradle`; `--version-code` /
-`--version-name` bisa dipakai untuk menimpanya. Perintah ini menyalin APK ke
-`storage/app/private/releases/` dan mencatatnya di tabel `app_releases`.
+Di server, `versionCode`/`versionName` **tidak** bisa dibaca otomatis (proyek mobile tidak ada di
+sana), jadi kirim lewat `--version-code`/`--version-name`. Perintah ini menyalin APK ke
+`storage/app/private/releases/` di dalam volume `app-storage` dan mencatatnya di tabel
+`app_releases`.
 
 Mulai saat itu, setiap aplikasi yang terpasang dan terhubung ke backend akan menandai lonceng di
 Beranda saat dibuka; halaman **Notifikasi** memuat kabar **Versi x.y.z tersedia** dengan tombol
@@ -269,8 +282,8 @@ Hal yang perlu diingat:
 
 - Aplikasi membandingkan **`versionCode`**, bukan nama versi. Rilis dengan `versionCode` lebih kecil
   atau sama tidak akan pernah ditawarkan.
-- Berkas APK disimpan di `backend/storage/app/private/releases/` (tidak ikut git, tidak perlu
-  symlink `public/storage`).
+- Berkas APK disimpan di volume `app-storage` container (`storage/app/private/releases/` di
+  dalamnya) — tidak ikut git, dan tidak perlu symlink `public/storage`.
 - Selama backend tidak bisa dihubungi, tidak ada notifikasi apa pun — aplikasi tetap jalan normal.
 - Pembaruan menimpa aplikasi lama hanya bila ditandatangani dengan **kunci yang sama**. Kunci debug
   sudah stabil per mesin; begitu pindah ke keystore rilis (§4), pengguna perlu memasang ulang sekali

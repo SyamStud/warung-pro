@@ -449,6 +449,9 @@ Base URL: `/api/v1`. Semua response JSON. Semua endpoint privat butuh `Authoriza
 
 Nilai `sort`: `name`, `price_asc`, `price_desc` (selain itu → urut `id` terbaru).
 
+`search` mencocokkan nama **atau** SKU dan **tidak peka huruf besar/kecil** (dibandingkan lewat
+`lower(...) like ?`, karena `LIKE` PostgreSQL peka huruf besar/kecil sedangkan SQLite tidak).
+
 `POST /products/import` menerima `{ "rows": [...], "mode": "create" | "upsert" }` — maksimal 500
 baris. Amplopnya yang ketat (jumlah baris, bentuk baris); isi tiap baris diperiksa **per baris**
 dan jawabannya selalu `200` berisi `data.created`, `data.updated`, `data.skipped`,
@@ -1113,3 +1116,67 @@ Catatan:
   berpindah keystore (mis. dari debug ke release) memaksa pengguna memasang ulang.
 - **Belum termasuk:** push notification lewat FCM, sehingga notifikasi muncul walau aplikasi
   tertutup (kandidat P2, §G).
+
+---
+
+## 17. Deploy Server (Docker)
+
+Backend dijalankan di homeserver pribadi, bukan di laptop: aplikasi di HP harus bisa memanggil API
+kapan pun, sedangkan laptop ikut mati. PostgreSQL yang selama ini jadi target produksi baru
+benar-benar dipakai di sini (§2, §5).
+
+### 17.1 Bentuknya
+
+`backend/compose.yaml` berisi tiga service:
+
+| Service | Isi |
+|---|---|
+| `app` | Satu container: **nginx + php-fpm** (supervisor menjaga keduanya). Dipublikasikan di **`7001:80`**. Volume `app-storage` menyimpan APK rilis, log, dan sesi. |
+| `db` | **PostgreSQL 17**, tanpa port ke luar; hanya dijangkau `app`. Volume `db-data`. |
+| `tunnel` | Connector **Cloudflare Tunnel** (`--profile tunnel`). Aktif hanya bila `TUNNEL_TOKEN` ada di `.env`. |
+
+Image dibangun dua tahap (`backend/Dockerfile`): `composer:2` memasang dependensi tanpa paket dev,
+lalu `php:8.5-fpm-alpine` menjalankan aplikasinya (ekstensi tambahan hanya `pdo_pgsql`; OPcache
+sudah ada di image dasarnya). Berkas `.dockerignore` menahan `vendor/`, `tests/`, data lokal, dan
+**`bootstrap/cache/*.php`** — manifes paket hasil generate lokal masih menyebut paket dev dan
+membuat container gagal start.
+
+### 17.2 Siklus deploy
+
+```bash
+scripts/deploy-server.sh
+```
+
+Skrip itu menyalin `backend/` ke server dengan rsync (`--delete`, tetapi `.env`, `vendor/`, dan
+data lokal dikecualikan sehingga tidak ikut terhapus), membuat
+`backend/.env` **sekali** di server (APP_KEY & sandi PostgreSQL diacak; tidak pernah ditimpa lagi
+karena bergantinya APP_KEY membatalkan semua token), menjalankan `docker compose up -d --build`,
+lalu menunggu `/up` menjawab.
+
+Saat container start, `docker/entrypoint.sh` berurutan: menunggu PostgreSQL, merapikan direktori
+tulis, `package:discover`, `migrate --force`, dan **menyemai akun demo hanya bila tabel `users`
+masih kosong**. `config:cache` sengaja **tidak** dipakai: `.env` hanya dibaca Laravel selama
+konfigurasi belum ter-cache, sehingga cache yang tertinggal di image bisa membuat perubahan `.env`
+diabaikan pada deploy berikutnya.
+
+Rilis aplikasi ikut pindah ke server: `scripts/rilis.sh` mengirim APK ke container dan menjalankan
+`release:publish` di sana (versi terbit sebelumnya dibaca dari database server). Backend lokal
+masih bisa dipakai untuk pengembangan lewat `scripts/rilis.sh --lokal`.
+
+### 17.3 Cloudflare Tunnel
+
+`pos.syamlab.my.id` masuk lewat Cloudflare Tunnel ke `http://app:80` di jaringan Compose. TLS
+diakhiri Cloudflare, jadi `TRUSTED_PROXIES=*` disetel di `compose.yaml` supaya Laravel melihat
+skema `https` yang benar — penting karena `download_url` pada notifikasi pembaruan dibangun dari
+host permintaan (§16).
+
+### 17.4 Bedanya SQLite dan PostgreSQL yang ketahuan dari deploy ini
+
+Menjalankan migrasi di PostgreSQL sungguhan memunculkan dua hal yang tidak terlihat di SQLite:
+
+- **Index unik vs constraint.** `$table->unique()` di PostgreSQL membuat *constraint*, bukan index
+  lepas, sehingga `DROP INDEX` gagal dan harus lewat schema builder (`dropUnique`). Migrasi
+  `merge_barcode_into_sku` diperbaiki.
+- **Pencarian peka huruf besar/kecil.** `LIKE` di PostgreSQL peka huruf besar/kecil, sedangkan di
+  SQLite tidak — pencarian "indomie" tidak menemukan "Indomie Goreng". `search` di model `Product`
+  dan `Transaction` sekarang memakai `lower(...) like ?`.

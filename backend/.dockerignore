@@ -1,0 +1,30 @@
+# Konteks build sengaja ramping: hanya kode backend yang ikut.
+.git
+.gitignore
+.dockerignore
+Dockerfile
+compose.yaml
+
+# Rahasia & data lokal — tidak pernah masuk image.
+.env
+.env.*
+!.env.example
+database/*.sqlite
+database/*.sqlite-*
+storage/app/private/releases/
+storage/app/private/*.apk
+storage/framework/cache/data/
+storage/framework/sessions/
+storage/framework/views/
+storage/logs/
+
+# Perkakas pengembangan.
+vendor/
+node_modules/
+tests/
+.phpunit.cache/
+storage/pail/
+
+# Manifes paket hasil generate lokal — masih menyebut paket dev, dan akan
+# dibuat ulang oleh `package:discover` saat container pertama kali jalan.
+bootstrap/cache/*.php

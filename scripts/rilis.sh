@@ -14,6 +14,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GRADLE="$ROOT/mobile/android/app/build.gradle"
 BACKEND="$ROOT/backend"
 
+# Tujuan penerbitan rilis: server rumah (default) atau backend di mesin ini.
+HOST="${WARUNG_SERVER:-homeserver@main}"
+SERVER_DIR="${WARUNG_SERVER_DIR:-/home/homeserver/warung}"
+
 if [[ -t 1 ]]; then
   B=$'\033[1;34m'; G=$'\033[1;32m'; Y=$'\033[1;33m'; R=$'\033[1;31m'; N=$'\033[0m'
 else
@@ -32,17 +36,22 @@ Terbitkan versi baru aplikasi dalam satu perintah.
   scripts/rilis.sh "Perbaikan cetak struk"
 
 Alur: naikkan versionCode/versionName di mobile/android/app/build.gradle
-      → build APK → terbitkan ke backend, sehingga setiap aplikasi yang sudah
-      terpasang ditawari pembaruan ini saat dibuka.
+      → build APK → terbitkan ke server (Docker), sehingga setiap aplikasi yang
+      sudah terpasang ditawari pembaruan ini saat dibuka.
 
 Opsi:
   -c, --catatan "..."   Catatan rilis yang tampil di aplikasi.
       --versi X.Y.Z     Set versionName (default: angka terakhir dinaikkan).
       --naik N          Tambah versionCode sebanyak N (default 1).
       --release         Build APK release bertanda tangan (butuh keystore).
-      --tanpa-terbit    Hanya build APK, jangan diterbitkan ke backend.
+      --lokal           Terbitkan ke backend di mesin ini, bukan ke server.
+      --tanpa-terbit    Hanya build APK, jangan diterbitkan.
       --paksa           Izinkan versionCode yang tidak lebih baru dari rilis terbit.
   -h, --help            Tampilkan bantuan ini.
+
+Variabel lingkungan:
+  WARUNG_SERVER      tujuan SSH (default homeserver@main)
+  WARUNG_SERVER_DIR  folder backend di server (default /home/homeserver/warung)
 TXT
 }
 
@@ -52,6 +61,7 @@ naik=1
 mode="debug"
 paksa=0
 terbitkan=1
+tujuan="server"
 
 while (( $# > 0 )); do
   case "$1" in
@@ -59,6 +69,7 @@ while (( $# > 0 )); do
     --versi) versi="${2:?--versi butuh nilai}"; shift 2 ;;
     --naik) naik="${2:?--naik butuh nilai}"; shift 2 ;;
     --release) mode="release"; shift ;;
+    --lokal) tujuan="lokal"; shift ;;
     --tanpa-terbit) terbitkan=0; shift ;;
     --paksa) paksa=1; shift ;;
     -h | --help) usage; exit 0 ;;
@@ -123,13 +134,72 @@ else
   die "versionName \"$nama_lama\" tidak berbentuk angka. Tentukan manual: --versi X.Y.Z"
 fi
 
+# Versi tertinggi yang sudah terbit di tujuan penerbitan. Kosong berarti gagal
+# membaca (mis. container di server belum jalan).
+kode_terbit_lokal() {
+  (cd "$BACKEND" && php artisan tinker \
+    --execute="echo (int) (App\Models\AppRelease::query()->max('version_code') ?? 0);" \
+    2>/dev/null | tr -dc '0-9')
+}
+
+kode_terbit_server() {
+  local perintah
+  perintah="bash -s -- $(printf '%q' "$SERVER_DIR")"
+
+  ssh -o ConnectTimeout=15 "$HOST" "$perintah" <<'REMOTE' 2>/dev/null | tr -dc '0-9'
+set -euo pipefail
+cd "$1/backend"
+docker compose exec -T app php artisan tinker \
+  --execute='echo (int) (App\Models\AppRelease::query()->max("version_code") ?? 0);'
+REMOTE
+}
+
+# Salin APK ke server, lalu jalankan release:publish di dalam container.
+# versionCode/versionName dikirim eksplisit karena proyek mobile tidak ada di server.
+terbitkan_ke_server() {
+  local apk="$1" kode="$2" nama="$3" catatan="$4" berkas perintah
+
+  say "Mengirim APK ke $HOST…"
+  ssh -o ConnectTimeout=15 "$HOST" "mkdir -p $(printf '%q' "$SERVER_DIR/incoming")"
+  berkas="$SERVER_DIR/incoming/rilis-$kode.apk"
+  rsync -az "$apk" "$HOST:$berkas"
+
+  say "Menerbitkan rilis di container server…"
+
+  # Nilainya dikirim sebagai argumen yang sudah dikutip: `ssh` menggabungkan
+  # argumennya menjadi satu baris perintah, sehingga catatan rilis yang berisi
+  # spasi atau kurung akan merusak perintah kalau dikutip sendiri-sendiri.
+  perintah="bash -s -- $(printf '%q' "$SERVER_DIR") $(printf '%q' "$kode") $(printf '%q' "$nama") $(printf '%q' "$catatan")"
+
+  ssh "$HOST" "$perintah" <<'REMOTE'
+set -euo pipefail
+
+berkas="$1/incoming/rilis-$2.apk"
+cd "$1/backend"
+docker compose cp "$berkas" "app:/tmp/rilis-$2.apk"
+docker compose exec -T app php artisan release:publish "/tmp/rilis-$2.apk" \
+  --version-code="$2" --version-name="$3" --notes="$4"
+docker compose exec -T app rm -f "/tmp/rilis-$2.apk"
+REMOTE
+}
+
 # Rilis dengan versionCode yang tidak naik tidak akan pernah ditawarkan ke
 # aplikasi yang sudah terpasang, jadi lebih baik berhenti di sini.
 if ((terbitkan == 1)); then
-  terbit="$(cd "$BACKEND" && php artisan tinker \
-    --execute="echo (int) (App\Models\AppRelease::query()->max('version_code') ?? 0);" \
-    2>/dev/null | tr -dc '0-9')" || terbit=""
-  terbit="${terbit:-0}"
+  if [[ "$tujuan" == "server" ]]; then
+    command -v ssh >/dev/null || die "ssh tidak ada di PATH (dibutuhkan untuk menerbitkan ke $HOST)."
+    command -v rsync >/dev/null || die "rsync tidak ada di PATH (dibutuhkan untuk menerbitkan ke $HOST)."
+
+    terbit="$(kode_terbit_server)" || true
+    if [[ -z "$terbit" ]]; then
+      die "Tidak bisa membaca versi yang sudah terbit di $HOST:$SERVER_DIR.
+  Pastikan container di server jalan (scripts/deploy-server.sh), atau terbitkan
+  ke backend lokal dengan --lokal."
+    fi
+  else
+    terbit="$(kode_terbit_lokal)" || terbit=""
+    terbit="${terbit:-0}"
+  fi
 
   if ((kode_baru <= terbit)) && ((paksa == 0)); then
     die "versionCode $kode_baru tidak lebih baru dari yang sudah terbit ($terbit).
@@ -186,11 +256,22 @@ ok "APK: $apk_out ($(du -h "$apk_out" | cut -f1))"
 # --- Terbitkan ------------------------------------------------------------
 
 if ((terbitkan == 1)); then
-  say "Terbitkan ke backend…"
-  (cd "$BACKEND" && php artisan release:publish "$apk_out" --notes="$catatan")
+  if [[ "$tujuan" == "server" ]]; then
+    terbitkan_ke_server "$apk_out" "$kode_baru" "$nama_baru" "$catatan"
+  else
+    say "Terbitkan ke backend lokal…"
+    (cd "$BACKEND" && php artisan release:publish "$apk_out" --notes="$catatan")
+  fi
+
   ok "Rilis $nama_baru (versionCode $kode_baru) sudah terbit."
 else
-  warn "Dilewati: APK tidak diterbitkan ke backend (--tanpa-terbit)."
+  warn "Dilewati: APK tidak diterbitkan (--tanpa-terbit)."
+fi
+
+if [[ "$tujuan" == "server" ]]; then
+  tujuan_teks="container di $HOST"
+else
+  tujuan_teks="backend lokal (php artisan serve) di mesin ini"
 fi
 
 cat <<TXT
@@ -199,8 +280,7 @@ Langkah setelah ini:
   1. Commit kenaikan versi:
        git add mobile/android/app/build.gradle
        git commit -m "chore(rilis): $nama_baru ($kode_baru)"
-  2. Pastikan backend jalan supaya HP bisa memeriksa versi:
-       cd backend && php artisan serve --host=0.0.0.0 --port=8000
+  2. Pastikan $tujuan_teks jalan dan terjangkau dari HP.
   3. Buka aplikasi di HP → lonceng di Beranda bertanda; halaman Notifikasi
      memuat "Versi $nama_baru tersedia".
 TXT
