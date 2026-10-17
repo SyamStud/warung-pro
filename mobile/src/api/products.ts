@@ -1,4 +1,5 @@
 import { api } from '../lib/http';
+import type { ImportResult, ImportRow } from '../lib/import/types';
 import type { Paginated, Product } from '../types';
 
 export interface ProductInput {
@@ -61,6 +62,17 @@ export const productsApi = {
 
   create: (input: ProductInput, idempotencyKey?: string) =>
     api.post<{ data: Product }>('/products', input, idempotencyKey),
+
+  /**
+   * Import rows the app parsed from a spreadsheet.
+   *
+   * `mode` decides what happens to a row whose product is already in the
+   * catalog: "create" leaves that product alone and reports the line,
+   * "upsert" updates it. The server owns that decision — and the whole list of
+   * what it skipped — so two devices cannot disagree.
+   */
+  importRows: (rows: ImportRow[], mode: 'create' | 'upsert') =>
+    api.post<{ data: ImportResult }>('/products/import', { rows, mode }),
 
   update: (id: number, input: Partial<ProductInput>, options: ProductUpdateOptions = {}) =>
     api.patch<{ data: Product }>(`/products/${id}`, { ...input, ...options }),

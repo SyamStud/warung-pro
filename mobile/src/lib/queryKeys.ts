@@ -20,4 +20,9 @@ export const transactionKeys = {
 export const appKeys = {
   /** The newest build published on the server (update notice). */
   release: ['app', 'release'] as const,
+  /**
+   * The newest build the user has already opened Notifikasi for. Lives in the
+   * cache so the bell on Beranda and the Notifikasi page agree immediately.
+   */
+  notifSeen: ['app', 'notif-seen'] as const,
 };

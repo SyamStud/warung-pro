@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Product\ImportProductsRequest;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
+use App\Services\ProductImporter;
 use App\Services\SkuGenerator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -72,6 +74,27 @@ class ProductController extends Controller
     public function show(Request $request, int $product): ProductResource
     {
         return new ProductResource($this->findProduct($request, $product));
+    }
+
+    /**
+     * Import products from a spreadsheet the app already parsed.
+     *
+     * The phone reads the .xlsx itself (no upload, no PHP spreadsheet
+     * extension); this endpoint is the authoritative pass: it validates every
+     * row, matches existing products, and reports what it skipped.
+     */
+    public function import(ImportProductsRequest $request, ProductImporter $importer): JsonResponse
+    {
+        /** @var array<int, array<string, mixed>> $rows */
+        $rows = $request->validated('rows');
+
+        $result = $importer->import(
+            $request->user(),
+            $rows,
+            $request->string('mode')->toString() === 'upsert',
+        );
+
+        return response()->json(['data' => $result->toArray()]);
     }
 
     /**

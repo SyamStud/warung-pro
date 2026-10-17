@@ -13,7 +13,7 @@ import {
   IonSpinner,
   useIonToast,
 } from '@ionic/react';
-import { addOutline, closeCircle, pricetagsOutline, searchOutline } from 'ionicons/icons';
+import { addOutline, closeCircle, cloudUploadOutline, pricetagsOutline, searchOutline } from 'ionicons/icons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { categoriesApi } from '../api/categories';
@@ -21,6 +21,7 @@ import { productsApi, type ProductSort } from '../api/products';
 import ProductDetailModal from '../components/ProductDetailModal';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductRow from '../components/ProductRow';
+import ImportProductsModal from '../components/ImportProductsModal';
 import ConnectionBanner from '../components/ConnectionBanner';
 import PageHeader from '../components/PageHeader';
 import SyncStatus from '../components/SyncStatus';
@@ -54,6 +55,7 @@ const Products: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [detail, setDetail] = useState<Product | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filters = {
     search: debouncedSearch.trim() || undefined,
@@ -109,6 +111,14 @@ const Products: React.FC = () => {
             title="Katalog Produk"
             actions={
               <>
+                <button
+                  type="button"
+                  className="btn btn--icon"
+                  aria-label="Impor dari Excel"
+                  onClick={() => setImportOpen(true)}
+                >
+                  <IonIcon icon={cloudUploadOutline} />
+                </button>
                 <button
                   type="button"
                   className="btn btn--icon"
@@ -258,6 +268,12 @@ const Products: React.FC = () => {
           setDetail(null);
           showToast(message);
         }}
+      />
+
+      <ImportProductsModal
+        isOpen={importOpen}
+        onDismiss={() => setImportOpen(false)}
+        onImported={(message) => showToast(message)}
       />
     </IonPage>
   );

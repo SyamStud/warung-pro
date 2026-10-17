@@ -1,6 +1,6 @@
 import { Preferences } from '@capacitor/preferences';
 import { beforeEach, expect, test } from 'vitest';
-import { isUpdateAvailable, readDismissedVersion, rememberDismissedVersion } from './appUpdate';
+import { isUpdateAvailable, readDismissedVersion, readSeenVersion, rememberDismissedVersion, rememberSeenVersion } from './appUpdate';
 import type { AppRelease } from '../types';
 
 const release = (versionCode: number): AppRelease => ({
@@ -40,4 +40,23 @@ test('nilai tersimpan yang bukan angka dianggap belum pernah ditutup', async () 
   await Preferences.set({ key: 'warung:update-dismissed', value: 'entah' });
 
   await expect(readDismissedVersion()).resolves.toBe(null);
+});
+
+test('mengingat versi yang sudah dibuka di Notifikasi', async () => {
+  await expect(readSeenVersion()).resolves.toBe(null);
+
+  await rememberSeenVersion(4);
+
+  await expect(readSeenVersion()).resolves.toBe(4);
+});
+
+test('"sudah dibaca" dan "Nanti" disimpan terpisah', async () => {
+  await rememberSeenVersion(4);
+  await rememberDismissedVersion(4);
+
+  await Preferences.remove({ key: 'warung:update-dismissed' });
+
+  // Membuang jawaban "Nanti" tidak menghidupkan lagi titik di lonceng.
+  await expect(readDismissedVersion()).resolves.toBe(null);
+  await expect(readSeenVersion()).resolves.toBe(4);
 });

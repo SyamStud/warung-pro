@@ -154,7 +154,7 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 - [ ] SKU yang diarsipkan bisa dipakai ulang untuk produk baru.
 - [ ] Pindai barcode → harga benar; kode tak dikenal → tawaran tambah produk (SKU terisi).
 - [ ] Cari di **Cek Harga** dan **Katalog Produk**; urutkan katalog (Terbaru/Nama/Harga).
-- [ ] Halaman Cek Harga / Pembayaran / Struk tidak menampilkan tab bar.
+- [ ] Halaman Cek Harga / Pembayaran / Struk / Notifikasi tidak menampilkan tab bar.
 - [ ] Cek Harga: pratinjau kamera hidup di dalam app dan hasil pindai langsung muncul; tombol
       **Pindai Barcode** (UI kamera native ML Kit) juga masih berfungsi. Saat izin kamera
       ditolak, muncul pesan jelas dan tombol ML Kit tetap bisa dipakai.
@@ -164,6 +164,13 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
       hidup — memindai barcode berikutnya langsung berhasil tanpa keluar dari halaman.
 - [ ] Cek Harga: barang di luar bingkai tidak terbaca (bukti pemotongan area bingkai bekerja),
       dan tombol **Lampu** muncul hanya di perangkat yang punya torch.
+- [ ] Impor dari Excel: siapkan `.xlsx` berisi kolom **Nama** dan **Harga** (plus SKU/Satuan/
+      Kategori/Catatan bila ada) → **Produk → tombol impor** → pratinjau menyebut jumlah baris
+      siap diimpor dan baris yang dilewati → **Impor** → produk muncul di katalog dengan harga
+      yang benar.
+- [ ] Impor ulang berkas yang sama **tanpa** centang "Perbarui produk yang sudah ada" → semua
+      baris dilewati (produk tidak berganda). Coba lagi **dengan** centang → harga ikut berubah.
+- [ ] Impor saat mode pesawat → tombol impor menunggu koneksi dan memberi tahu, bukan gagal diam.
 - [ ] Perubahan dari perangkat lain terlihat setelah refresh.
 - [ ] Perangkat lain (akun berbeda) tidak melihat data pengguna ini.
 
@@ -197,11 +204,13 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 - [ ] Masuk lagi setelah keluar → keranjang kosong (tidak mewarisi keranjang akun sebelumnya).
 
 ### Notifikasi pembaruan (PLAN.md §16)
-- [ ] Terbitkan satu rilis dengan `versionCode` lebih tinggi → buka aplikasi → strip
-      **Versi x.y.z tersedia** muncul di Beranda.
+- [ ] Terbitkan satu rilis dengan `versionCode` lebih tinggi → buka aplikasi → **lonceng di baris
+      sapaan Beranda bertanda titik**.
+- [ ] Buka lonceng → halaman **Notifikasi** memuat kabar **Versi x.y.z tersedia** (catatan rilis,
+      ukuran, tanggal terbit) → kembali → titik di lonceng sudah hilang.
 - [ ] Tekan **Perbarui** → browser terbuka dan APK-nya terunduh → berkas bisa dipasang
       (menimpa aplikasi lama, data & sesi login tetap ada).
-- [ ] Tekan **Nanti** → strip hilang dan tetap hilang setelah aplikasi dibuka ulang.
+- [ ] Tekan **Nanti** → kabar hilang dan tetap hilang setelah aplikasi dibuka ulang.
 - [ ] Matikan backend → aplikasi tetap jalan normal tanpa pesan error soal pembaruan.
 
 ---
@@ -251,10 +260,10 @@ php artisan release:publish ~/Downloads/warung-pos-debug.apk --notes="Perbaikan 
 `--version-name` bisa dipakai untuk menimpanya. Perintah ini menyalin APK ke
 `storage/app/private/releases/` dan mencatatnya di tabel `app_releases`.
 
-Mulai saat itu, setiap aplikasi yang terpasang dan terhubung ke backend akan menampilkan strip
-**Versi x.y.z tersedia** di Beranda saat dibuka, dengan tombol **Perbarui** (mengunduh APK lewat
-browser, lalu pengguna menekan *Pasang*) dan **Nanti** (menyembunyikan versi itu). Rinciannya di
-[PLAN.md §16](../PLAN.md).
+Mulai saat itu, setiap aplikasi yang terpasang dan terhubung ke backend akan menandai lonceng di
+Beranda saat dibuka; halaman **Notifikasi** memuat kabar **Versi x.y.z tersedia** dengan tombol
+**Perbarui** (mengunduh APK lewat browser, lalu pengguna menekan *Pasang*) dan **Nanti**
+(menghilangkan kabar versi itu). Rinciannya di [PLAN.md §16](../PLAN.md).
 
 Hal yang perlu diingat:
 

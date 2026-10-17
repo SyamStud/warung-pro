@@ -198,9 +198,9 @@ Email + kata sandi, tombol tampilkan/sembunyikan sandi, tombol **Masuk** biru. T
 
 ### 4.3 Beranda
 
-Sapaan pengguna, **4 kartu aksi cepat** (Cek Harga · Tambah Produk · Kasir · Riwayat), dan daftar **Produk terbaru** dengan tautan *Lihat semua*.
+Sapaan pengguna + **lonceng Notifikasi**, **4 kartu aksi cepat** (Cek Harga · Tambah Produk · Kasir · Riwayat), dan daftar **Produk terbaru** dengan tautan *Lihat semua*.
 
-Saat server punya rilis aplikasi yang lebih baru, Beranda juga menampilkan strip **Versi x.y.z tersedia** dengan tombol **Perbarui** dan **Nanti** (lihat §16).
+Saat server punya rilis aplikasi yang lebih baru, lonceng itu bertanda titik dan halaman **Notifikasi** (§4.10) memuat kabar **Versi x.y.z tersedia** dengan tombol **Perbarui** dan **Nanti** (lihat §16). Kabar tidak lagi menempel sebagai strip di Beranda: lonceng adalah satu-satunya jalur masuk, sehingga kabar lain bisa menyusul di halaman yang sama.
 
 Di dasar Beranda ada kartu **Akun** (nama + email) dengan tombol **Keluar**. Keluar memakai dialog
 konfirmasi; bila masih ada perubahan produk yang belum tersinkron, dialog menyebutkan jumlahnya
@@ -255,6 +255,8 @@ Bar pencarian pil, chip kategori (+ tambah kategori), pemilih urutan (Terbaru ·
 
 Form tambah/edit punya **satu kolom “SKU / Barcode”** dengan tombol **generate** (backend) dan tombol **scan**. Foto produk tidak diperlukan.
 
+Di kanan judul ada tombol **Impor** (ikon panah ke atas) yang membuka alur impor dari Excel (§4.11) dan tombol **Kelola Kategori**.
+
 ### 4.6 POS
 
 Pencarian & scan, daftar keranjang dengan kontrol kuantitas, ringkasan subtotal, dan tombol **Lanjut ke Pembayaran**. Keranjang disimpan di provider bersama (memori), sehingga bisa diisi dari Cek Harga.
@@ -270,6 +272,43 @@ Kartu struk bergaya kertas (nama toko, alamat, tanggal, nomor, item, subtotal, d
 ### 4.9 Riwayat Transaksi
 
 Pencarian nomor transaksi, chip metode pembayaran (Semua/Tunai/Non Tunai), daftar transaksi dengan badge status & metode, modal detail item + pembayaran, dan tombol cetak ulang.
+
+### 4.10 Notifikasi (pushed)
+
+Halaman ini dibuka dari **lonceng di baris sapaan Beranda** dan berisi daftar kabar aplikasi, satu
+kartu per kabar:
+
+- **Kabar versi baru** — judul `Versi x.y.z tersedia`, catatan rilis, baris kecil berisi ukuran
+  berkas dan tanggal terbit, lalu tombol **Perbarui** (tautan yang diserahkan ke browser Android,
+  yang mengunduh APK-nya) dan **Nanti**.
+- **Keadaan kosong** — "Belum ada notifikasi" bila belum ada rilis yang lebih baru.
+
+Lonceng menampilkan titik kecil selama kabar versi terbaru **belum pernah dibuka**; membuka
+halaman ini menghapus titik itu, tetapi kabarnya tetap ada sampai dijawab. "Nanti" menyimpan versi
+yang ditolak, sehingga versi itu tidak ditawarkan lagi sementara versi yang lebih baru tetap
+ditawarkan. Semua keadaan disimpan di perangkat (Capacitor Preferences), jadi tetap berlaku setelah
+aplikasi dibuka ulang.
+
+Bentuknya sengaja berupa daftar (`useNotifications`) supaya jenis kabar lain (mis. stok menipis atau
+sinkronisasi bermasalah) bisa menyusul tanpa membuat layar baru.
+
+### 4.11 Impor Produk dari Excel (modal)
+
+Dibuka dari tombol **Impor** di layar Produk. Tiga langkah dalam satu modal:
+
+1. **Pilih berkas** — `.xlsx` (Excel) atau `.csv`, lewat pemilih berkas Android. Berkas dibaca di
+   dalam aplikasi: `.xlsx` diurai di WebView (dimuat saat dipakai), `.csv` dibaca sebagai teks
+   dengan pengenalan pemisah `,` `;` atau tab. Keduanya tidak diunggah sebagai berkas — yang
+   dikirim ke server hanya baris yang sudah jadi. Di layar ini juga ditampilkan contoh isi berkas
+   yang benar.
+2. **Tinjau** — jumlah baris siap diimpor, contoh beberapa baris, dan daftar baris yang dilewati
+   beserta alasannya (nama kosong, harga tidak terbaca). Ada centang **Perbarui produk yang sudah
+   ada**.
+3. **Impor** — hasil dari server: berapa dibuat, berapa diperbarui, kategori baru apa saja, dan
+   baris yang dilewati (mis. produknya sudah ada). Katalog dan chip kategori langsung disegarkan.
+
+Berkas contoh yang dipakai uji browser (`/tmp/opencode/uishots/make-xlsx.py`) sengaja berkas
+`.xlsx` sungguhan, bukan CSV yang berganti nama.
 
 ---
 
@@ -402,12 +441,20 @@ Base URL: `/api/v1`. Semua response JSON. Semua endpoint privat butuh `Authoriza
 | GET | `/products` | Daftar & pencarian (`search`, `category_id`, `sort`, `page`, `per_page`) |
 | POST | `/products` | Buat produk |
 | GET | `/products/next-sku` | Saran SKU berikutnya (belum dipesan sampai disimpan) |
+| POST | `/products/import` | Impor banyak produk dari baris yang sudah dibaca aplikasi (§4.11) |
 | GET | `/products/{id}` | Detail produk |
 | PATCH | `/products/{id}` | Update produk |
 | DELETE | `/products/{id}` | Arsipkan (soft delete) |
 | GET | `/products/lookup?sku={code}` | Lookup produk berdasarkan SKU (= kode hasil scan) |
 
 Nilai `sort`: `name`, `price_asc`, `price_desc` (selain itu → urut `id` terbaru).
+
+`POST /products/import` menerima `{ "rows": [...], "mode": "create" | "upsert" }` — maksimal 500
+baris. Amplopnya yang ketat (jumlah baris, bentuk baris); isi tiap baris diperiksa **per baris**
+dan jawabannya selalu `200` berisi `data.created`, `data.updated`, `data.skipped`,
+`data.categories_created`, dan `data.issues` (nomor baris + nama + alasan). Pencocokan produk lama:
+lewat SKU bila baris punya SKU, kalau tidak lewat nama (tanpa peduli huruf besar/kecil). Tanpa
+`upsert`, baris yang sudah ada hanya dilewati. Seluruh berkas disimpan dalam satu transaksi.
 
 ### 6.3 Categories
 
@@ -459,6 +506,40 @@ Content-Type: application/json
   }
 }
 ```
+
+**Import produk**
+
+```http
+POST /api/v1/products/import
+Content-Type: application/json
+
+{
+  "mode": "upsert",
+  "rows": [
+    { "row": 2, "name": "Indomie Goreng", "sku": null, "unit": "pcs", "selling_price": 3000, "category": "Makanan", "notes": null },
+    { "row": 3, "name": "Teh Kotak 250ml", "sku": "8991002102006", "unit": "pcs", "selling_price": 5000, "category": "Minuman", "notes": null }
+  ]
+}
+```
+
+```json
+200 OK
+{
+  "data": {
+    "created": 2,
+    "updated": 0,
+    "skipped": 1,
+    "categories_created": ["Makanan", "Minuman"],
+    "issues": [
+      { "row": 4, "name": "8990000000001", "message": "Nama produk kosong." }
+    ]
+  }
+}
+```
+
+Baris rusak tidak membatalkan sisanya: baris itu masuk `issues` (dengan nomor barisnya di berkas),
+baris lain tetap diproses dalam satu transaksi. `422 VALIDATION_ERROR` hanya untuk masalah
+amplop — tidak ada baris sama sekali, atau lebih dari 500 baris.
 
 **Lookup hasil scan**
 
@@ -1001,8 +1082,8 @@ tidak pernah ditawari versi baru. Ia juga memilih sendiri JDK 21 (Capacitor 8 me
 mengenali `--release`, `--versi`, `--naik`, `--tanpa-terbit`, `--paksa`.
 
 4. Setiap aplikasi yang terpasang memeriksa rilis terbaru **saat dibuka** (juga setelah buka ulang),
-   membandingkan `version_code` dengan `versionCode` dirinya, lalu menampilkan strip
-   **Versi x.y.z tersedia** di Beranda.
+   membandingkan `version_code` dengan `versionCode` dirinya, lalu menandai **lonceng Notifikasi**
+   di Beranda. Kabar lengkapnya ada di halaman **Notifikasi** (§4.10).
 
 Endpoint (keduanya publik — pemeriksaan terjadi sebelum pengguna login):
 
@@ -1015,10 +1096,11 @@ Perilaku di aplikasi:
 
 | Keadaan | Yang terjadi |
 |---|---|
-| Server punya `version_code` lebih besar | Strip tawaran muncul di Beranda (catatan rilis + ukuran berkas) |
-| Sudah versi terbaru | Tidak ada apa-apa |
-| Belum ada rilis / offline / backend tidak menjawab | Tidak ada apa-apa — aplikasi berjalan normal (kegagalan senyap) |
-| Menekan **Nanti** | Versi itu disembunyikan (disimpan per versi); versi berikutnya tetap ditawarkan |
+| Server punya `version_code` lebih besar | Lonceng di Beranda bertanda titik; halaman Notifikasi memuat kabar versi itu (catatan rilis + ukuran + tanggal terbit) |
+| Sudah versi terbaru | Tidak ada kabar; lonceng tetap ada tanpa tanda |
+| Belum ada rilis / offline / backend tidak menjawab | Tidak ada kabar — aplikasi berjalan normal (kegagalan senyap) |
+| Halaman Notifikasi dibuka | Titik di lonceng hilang; kabarnya tetap ada sampai dijawab |
+| Menekan **Nanti** | Kabar itu hilang (disimpan per versi); versi berikutnya tetap ditawarkan |
 | Menekan **Perbarui** | APK diunduh lewat browser sistem, lalu pengguna menekan *Pasang* |
 
 Catatan:

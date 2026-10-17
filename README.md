@@ -45,10 +45,17 @@ Warung/
   navigasi Splash → Login → 4 tab + halaman Cek Harga/Pembayaran/Struk). **Verifikasi perangkat
   menyusul.**
 - **Notifikasi pembaruan aplikasi:** selesai pada level kode & test (rilis APK disimpan di
-  backend lewat `php artisan release:publish`, endpoint publik `GET /app/release`, strip
-  *Versi x.y.z tersedia* + tombol **Perbarui**/**Nanti** di Beranda). Terverifikasi end-to-end di
-  browser: tawaran muncul, "Nanti" menutupnya (dan tetap tertutup setelah buka ulang), versi
-  berikutnya ditawarkan lagi, dan tombol Perbarui benar-benar mengunduh APK-nya.
+  backend lewat `php artisan release:publish`, endpoint publik `GET /app/release`, halaman
+  **Notifikasi** yang dibuka dari lonceng di Beranda). Terverifikasi end-to-end di browser:
+  lonceng bertanda saat kabar belum dibuka, kabar berisi catatan rilis + ukuran + tanggal terbit,
+  membukanya menghilangkan tanda, "Nanti" menutup kabar itu (dan tetap tertutup setelah aplikasi
+  dibuka ulang), versi berikutnya ditawarkan lagi, dan tombol Perbarui benar-benar mengunduh
+  APK-nya.
+- **Impor produk dari Excel:** selesai pada level kode & test (berkas `.xlsx`/`.csv` dibaca di
+  dalam aplikasi, ditinjau dulu, lalu dikirim ke `POST /products/import`). Terverifikasi
+  end-to-end di browser dengan berkas `.xlsx` sungguhan: pratinjau menghitung baris, baris rusak
+  dilaporkan dengan nomor barisnya, harga bertulisan `Rp 2.500` tersimpan sebagai angka, kategori
+  baru ikut dibuat, dan impor ulang tanpa centang "perbarui" hanya melewati baris yang sudah ada.
 - **Keluar / ganti akun:** selesai pada level kode & test (kartu Akun di Beranda dengan dialog
   konfirmasi). Keluar menghapus token & profil, membersihkan cache data server, mengosongkan
   keranjang, dan membuang antrean perubahan offline setelah jumlahnya diberitahukan. Terverifikasi
@@ -185,6 +192,7 @@ Base URL: `/api/v1`. Endpoint yang sudah tersedia:
 | GET | `/products` | Daftar & pencarian produk (`search`, `category_id`, `sort`, pagination) |
 | POST | `/products` | Membuat produk (SKU otomatis bila kosong; mendukung header `Idempotency-Key`) |
 | GET | `/products/next-sku` | Saran SKU berikutnya untuk ditampilkan di form |
+| POST | `/products/import` | Impor produk dari daftar yang sudah dibaca aplikasi (baris rusak dilaporkan per baris) |
 | GET | `/products/{id}` | Detail produk |
 | PATCH | `/products/{id}` | Update produk (kirim `version` untuk deteksi konflik; `409` + `force` bila bentrok) |
 | DELETE | `/products/{id}` | Arsipkan produk |
@@ -197,7 +205,7 @@ Base URL: `/api/v1`. Endpoint yang sudah tersedia:
 | GET | `/transactions` | Daftar transaksi (`search`, `payment_method`, pagination) |
 | GET | `/transactions/{id}` | Detail transaksi |
 | GET | `/transactions/{id}/receipt` | Data untuk cetak struk |
-| GET | `/app/release` | Rilis aplikasi terbaru (publik) — dipakai notifikasi update di Beranda |
+| GET | `/app/release` | Rilis aplikasi terbaru (publik) — dipakai halaman Notifikasi |
 | GET | `/app/release/download?version_code=` | Unduh berkas APK versi tersebut (publik) |
 
 Semua error memakai envelope `{ "error": { "code", "message", "details?" } }`.
@@ -208,11 +216,15 @@ Aplikasi dipasang sebagai APK, jadi pembaruan tidak datang sendiri. Setiap kali 
 memeriksa `GET /app/release` dan membandingkan `version_code` terbaru di server dengan
 `versionCode` miliknya sendiri:
 
-- Ada versi lebih baru → Beranda menampilkan strip **Versi x.y.z tersedia** dengan catatan rilis,
-  ukuran berkas, tombol **Perbarui** (mengunduh APK-nya lewat browser) dan **Nanti** (menyembunyikan
-  versi itu sampai ada versi lebih baru lagi).
+- Ada versi lebih baru → **lonceng di baris sapaan Beranda** bertanda titik dan halaman
+  **Notifikasi** memuat kabar **Versi x.y.z tersedia** lengkap dengan catatan rilis, ukuran berkas,
+  tanggal terbit, tombol **Perbarui** (mengunduh APK-nya lewat browser) dan **Nanti**
+  (menghilangkan kabar itu sampai ada versi lebih baru lagi).
 - Belum ada rilis, offline, atau backend tidak menjawab → tidak ada notifikasi apa pun; aplikasi
   berjalan seperti biasa.
+
+Membuka halaman Notifikasi berarti kabar itu sudah dibaca, jadi titik di lonceng hilang — tetapi
+kabarnya tetap ada sampai dijawab **Perbarui** atau **Nanti**.
 
 Menerbitkan versi baru — satu perintah dari akar repo:
 
@@ -241,16 +253,57 @@ terpasang akan langsung ditawari versi tersebut. Rincian lengkap:
 - [PLAN.md §16](./PLAN.md) — alur & endpoint notifikasi pembaruan
 - [docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md) — menaikkan versi, signing, dan distribusi
 
+## Impor Produk dari Excel
+
+Menambah produk satu per satu tidak praktis kalau daftar harga sudah ada di Excel. Tombol **impor**
+(ikon panah ke atas) di kanan judul layar **Produk** membuka alurnya:
+
+1. **Pilih berkas** `.xlsx` atau `.csv` lewat pemilih berkas Android.
+2. **Tinjau** — jumlah baris yang siap diimpor, contoh isinya, dan baris yang dilewati beserta
+   alasannya (misalnya *Baris 4 · Nama produk kosong*).
+3. **Impor** — server yang memutuskan hasilnya: berapa dibuat, berapa diperbarui, dan baris mana
+   yang dilewati karena produknya sudah ada.
+
+Berkasnya dibaca **di dalam aplikasi** (tidak diunggah ke server, dan server tidak butuh pustaka
+spreadsheet). Kolom dikenali dari **nama judulnya**, jadi urutannya bebas dan huruf besar/kecil
+tidak masalah:
+
+| Kolom | Wajib | Keterangan |
+|---|---|---|
+| **Nama** | ya | Nama produk (maks. 255 karakter) |
+| **Harga** | ya | `3000`, `5.000`, `Rp 2.500` — semuanya dibaca. Pemisah diikuti dua angka = desimal (`12.500,50` → Rp 12.501) |
+| **SKU** | tidak | Kosong → dibuat otomatis (`PRD-000123`). Angka dari Excel tetap utuh |
+| **Satuan** | tidak | Default `pcs` |
+| **Kategori** | tidak | Dicocokkan tanpa peduli huruf besar/kecil; yang belum ada ikut dibuat |
+| **Catatan** | tidak | Kolom `notes` |
+
+Aturan pencocokan produk yang sudah ada (satu baris = satu produk):
+
+- Baris **punya SKU** → dicocokkan lewat SKU. SKU yang sama untuk pengguna lain tidak berpengaruh.
+- Baris **tanpa SKU** → dicocokkan lewat nama (tanpa peduli huruf besar/kecil), jadi mengimpor
+  ulang daftar yang sama memperbarui harga, bukan menggandakan produk.
+- Tanpa centang **Perbarui produk yang sudah ada**, baris yang sudah ada hanya dilewati dan
+  dilaporkan — harga lamanya tidak berubah.
+- Nama yang hanya berbeda huruf besar/kecil tidak menimpa ejaan yang sudah ada di katalog.
+- Baris kosong di ujung berkas diabaikan; baris ganda di dalam satu berkas dilaporkan sekali.
+- Maksimal 500 baris per berkas, dan semuanya masuk dalam **satu transaksi** — satu baris rusak
+  tidak membatalkan sisanya, tetapi juga tidak ada impor separuh jalan.
+
+Impor butuh koneksi internet (harga dan kode diperiksa server), jadi tombolnya menunggu sampai
+perangkat online.
+
 ## Layar & Navigasi
 
-Alurnya: **Splash → Login → 4 tab utama**, dengan empat halaman yang dibuka penuh (tab bar
-tersembunyi): **Cek Harga**, **Pembayaran**, **Preview Struk**, dan **Kelola Kategori**.
+Alurnya: **Splash → Login → 4 tab utama**, dengan lima halaman yang dibuka penuh (tab bar
+tersembunyi): **Cek Harga**, **Pembayaran**, **Preview Struk**, **Kelola Kategori**, dan
+**Notifikasi**.
 
 | Layar | Isi |
 |---|---|
-| **Beranda** | Sapaan, 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru, dan kartu **Akun** (nama · email · **Keluar**) |
+| **Beranda** | Sapaan + **lonceng Notifikasi** (bertanda titik bila ada kabar belum dibuka), 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru, dan kartu **Akun** (nama · email · **Keluar**) |
+| **Notifikasi** | Kabar aplikasi — hari ini kabar versi baru (catatan rilis · ukuran · tanggal terbit) dengan tombol **Perbarui**/**Nanti**; ada keadaan kosong bila belum ada kabar |
 | **Cek Harga** | Pencarian nama/SKU, viewfinder dengan **kamera langsung di dalam app** (memindai hanya area bingkai) + **beep & getar** saat terbaca, tombol **Pindai Barcode** (kamera native ML Kit), panel **belum terdaftar** dengan **Pindai ulang**, kartu hasil + **Tambahkan ke Keranjang** |
-| **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+**; tombol kategori di kanan judul membuka **Kelola Kategori** |
+| **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+**; di kanan judul ada **impor dari Excel** dan tombol kategori (**Kelola Kategori**) |
 | **Kelola Kategori** | Tambah, ubah nama, dan hapus kategori. Menghapus kategori tidak menghapus produknya — produknya hanya jadi tanpa kategori |
 | **POS** | Pencarian/scan, hasil pencarian tampil sebagai popup di atas keranjang, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
 | **Pembayaran** | Ringkasan pesanan, metode **Tunai/Non Tunai**, nominal dibayar (+pintasan), kembalian, **Bayar** |

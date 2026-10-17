@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, expect, test, vi } from 'vitest';
-import UpdateBanner from './UpdateBanner';
+import Notifications from './Notifications';
+import { readSeenVersion } from '../lib/appUpdate';
 import type { AppRelease } from '../types';
 
 const latest = vi.fn<() => Promise<{ data: AppRelease }>>();
@@ -26,12 +28,14 @@ const release = (overrides: Partial<AppRelease> = {}): AppRelease => ({
   ...overrides,
 });
 
-function renderBanner() {
+function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   return render(
     <QueryClientProvider client={client}>
-      <UpdateBanner />
+      <MemoryRouter>
+        <Notifications />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -43,60 +47,66 @@ beforeEach(() => {
   latest.mockResolvedValue({ data: release() });
 });
 
-test('menampilkan tawaran pembaruan beserta catatan rilis dan ukurannya', async () => {
-  renderBanner();
+test('menampilkan kabar versi baru beserta catatan, ukuran dan tanggalnya', async () => {
+  renderPage();
 
   await waitFor(() => expect(screen.getByText('Versi 1.1.0 tersedia')).toBeTruthy());
   expect(screen.getByText('Pemindai lebih cepat')).toBeTruthy();
-  expect(screen.getByText(/35 MB/)).toBeTruthy();
+  expect(screen.getByText(/Ukuran 35 MB/)).toBeTruthy();
+  expect(screen.getByText(/Terbit/)).toBeTruthy();
 });
 
 test('tombol Perbarui menautkan ke berkas versi tersebut', async () => {
-  renderBanner();
+  renderPage();
 
   const link = await screen.findByRole('link', { name: /perbarui/i });
 
   expect(link.getAttribute('href')).toBe(release().download_url);
 });
 
-test('tidak menampilkan apa pun saat aplikasi sudah versi terbaru', async () => {
-  installedBuild.mockResolvedValue(2);
-  latest.mockResolvedValue({ data: release() });
-
-  renderBanner();
-
-  await waitFor(() => expect(latest).toHaveBeenCalled());
-  expect(screen.queryByText(/tersedia/)).toBe(null);
-});
-
-test('tidak menampilkan apa pun saat server belum punya rilis (404)', async () => {
-  latest.mockRejectedValue(new Error('NOT_FOUND'));
-
-  renderBanner();
-
-  await waitFor(() => expect(latest).toHaveBeenCalled());
-  expect(screen.queryByText(/tersedia/)).toBe(null);
-});
-
-test('"Nanti" menyembunyikan tawaran untuk versi itu', async () => {
-  renderBanner();
+test('membuka halaman menandai kabar itu sudah dibaca', async () => {
+  renderPage();
 
   await screen.findByText('Versi 1.1.0 tersedia');
-  screen.getByText('Nanti').click();
+
+  await waitFor(async () => expect(await readSeenVersion()).toBe(2));
+});
+
+test('"Nanti" menghilangkan kabar untuk versi itu', async () => {
+  renderPage();
+
+  await screen.findByText('Versi 1.1.0 tersedia');
+  fireEvent.click(screen.getByText('Nanti'));
 
   await waitFor(() => expect(screen.queryByText('Versi 1.1.0 tersedia')).toBe(null));
 });
 
 test('versi yang lebih baru tetap ditawarkan walau versi sebelumnya dijawab "Nanti"', async () => {
-  renderBanner();
+  renderPage();
   await screen.findByText('Versi 1.1.0 tersedia');
-  screen.getByText('Nanti').click();
+  fireEvent.click(screen.getByText('Nanti'));
   await waitFor(() => expect(screen.queryByText('Versi 1.1.0 tersedia')).toBe(null));
 
-  // Versi berikutnya terbit; tawaran harus muncul lagi — inilah cara pengguna
-  // yang melewatkan satu pembaruan tetap mendapatkannya.
   latest.mockResolvedValue({ data: release({ version_code: 3, version_name: '1.2.0' }) });
-  renderBanner();
+  renderPage();
 
   await waitFor(() => expect(screen.getByText('Versi 1.2.0 tersedia')).toBeTruthy());
+});
+
+test('menampilkan keadaan kosong saat aplikasi sudah versi terbaru', async () => {
+  installedBuild.mockResolvedValue(2);
+
+  renderPage();
+
+  await waitFor(() => expect(latest).toHaveBeenCalled());
+  await waitFor(() => expect(screen.getByText('Belum ada notifikasi')).toBeTruthy());
+});
+
+test('menampilkan keadaan kosong saat server belum punya rilis (404)', async () => {
+  latest.mockRejectedValue(new Error('NOT_FOUND'));
+
+  renderPage();
+
+  await waitFor(() => expect(latest).toHaveBeenCalled());
+  await waitFor(() => expect(screen.getByText('Belum ada notifikasi')).toBeTruthy());
 });

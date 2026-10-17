@@ -23,6 +23,7 @@ Route::prefix('v1')->group(function () {
         // Declared before the resource so "lookup" is not captured as {product}.
         Route::get('/products/lookup', [ProductController::class, 'lookup']);
         Route::get('/products/next-sku', [ProductController::class, 'nextSku']);
+        Route::post('/products/import', [ProductController::class, 'import']);
         Route::apiResource('products', ProductController::class);
 
         Route::get('/categories', [CategoryController::class, 'index']);

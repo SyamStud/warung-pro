@@ -240,6 +240,11 @@ textarea {
   flex: none;
 }
 
+.greeting__text {
+  flex: 1;
+  min-width: 0;
+}
+
 .greeting__name {
   font-size: 16.2px;
   font-weight: 700;
@@ -252,6 +257,38 @@ textarea {
   font-size: 11.7px;
   color: var(--app-muted);
   margin: 2px 0 0;
+}
+
+/* Lonceng notifikasi, sejajar dengan sapaan. */
+.notif-bell {
+  position: relative;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-soft);
+  color: var(--app-ink);
+  font-size: 20px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.notif-bell:active {
+  transform: scale(0.97);
+}
+
+.notif-bell__dot {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--app-red);
+  box-shadow: 0 0 0 2px var(--app-surface);
 }
 
 /* --- Buttons ------------------------------------------------------------- */
@@ -1155,57 +1192,225 @@ select.input {
   line-height: 1.55;
 }
 
-/* "Versi baru tersedia" — same strip treatment as the offline notice so the two
-   stack cleanly at the top of Beranda. */
-.update-banner {
+/* Impor produk dari Excel — pratinjau sebelum dikirim. */
+.import-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 12px;
-  padding: 12px 16px;
+  text-align: center;
+  gap: 4px;
+}
+
+.import-card__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
   background: var(--app-blue-soft);
-  border-bottom: 1px solid #d8e4ff;
-}
-
-.update-banner__icon {
-  flex: none;
-  font-size: 20px;
   color: var(--app-blue);
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  margin-bottom: 6px;
 }
 
-.update-banner__body {
-  flex: 1 1 170px;
+.import-card__icon--done {
+  background: var(--app-green-soft);
+  color: var(--app-green);
+}
+
+.import-card__title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--app-ink);
+  text-align: left;
+}
+
+.import-card .import-card__title {
+  text-align: center;
+}
+
+.import-card .import-card__title + .field__hint {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.import-card .btn {
+  margin-top: 8px;
+}
+
+.import-summary {
+  margin: 0;
+  font-size: 14.4px;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+
+.import-table {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.import-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.4px;
+}
+
+.import-table th,
+.import-table td {
+  text-align: left;
+  padding: 5px 7px;
+  border-bottom: 1px solid var(--app-line);
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--app-muted);
+}
+
+.import-table th {
+  background: var(--app-blue-softer);
+  color: var(--app-ink);
+  font-weight: 700;
+}
+
+.import-preview {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-preview li {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
-.update-banner__title {
-  margin: 0;
+.import-preview__name {
+  font-size: 12.6px;
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.import-preview__meta {
+  font-size: 11.4px;
+  color: var(--app-muted);
+}
+
+.import-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.import-toggle input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--app-blue);
+}
+
+.import-toggle__title {
+  display: block;
   font-size: 12.6px;
   font-weight: 700;
   color: var(--app-ink);
 }
 
-.update-banner__notes {
-  margin: 3px 0 0;
-  color: var(--app-muted);
+.import-issues ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.import-issues li {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.import-issues__row {
   font-size: 11.4px;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+
+.import-issues__name {
+  font-size: 11.4px;
+  color: var(--app-blue);
+}
+
+.import-issues__message {
+  font-size: 11.4px;
+  color: var(--app-muted);
   line-height: 1.5;
 }
 
-.update-banner__meta {
-  margin: 3px 0 0;
-  color: var(--app-faint);
-  font-size: 10.8px;
+/* Notifikasi — satu kartu per kabar, dibuka dari lonceng di Beranda. */
+.notif-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: var(--app-surface);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow);
 }
 
-.update-banner__actions {
-  display: flex;
+.notif-card__icon {
   flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+}
+
+.notif-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-card__title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+
+.notif-card__text {
+  margin: 4px 0 0;
+  font-size: 11.7px;
+  color: var(--app-muted);
+  line-height: 1.55;
+}
+
+.notif-card__meta {
+  margin: 5px 0 0;
+  font-size: 10.8px;
+  color: var(--app-faint);
+}
+
+.notif-card__actions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  margin-top: 12px;
 }
 
 /* The button is an anchor so the WebView hands the APK to the browser. */
-.update-banner__actions a {
+.notif-card__actions a {
   text-decoration: none;
 }
 

@@ -21,11 +21,11 @@ import { useNavigate } from 'react-router-dom';
 import { categoriesApi } from '../api/categories';
 import { productsApi } from '../api/products';
 import ConnectionBanner from '../components/ConnectionBanner';
+import NotificationBell from '../components/NotificationBell';
 import PageHeader from '../components/PageHeader';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductRow from '../components/ProductRow';
 import SyncStatus from '../components/SyncStatus';
-import UpdateBanner from '../components/UpdateBanner';
 import { useAuth } from '../auth/useAuth';
 import { useOutbox } from '../hooks/useOutbox';
 import { categoryKeys, productKeys } from '../lib/queryKeys';
@@ -119,17 +119,16 @@ const Home: React.FC = () => {
 
         <ConnectionBanner />
 
-        <UpdateBanner />
-
         <div className="screen">
           <div className="greeting">
             <span className="greeting__avatar" aria-hidden="true">
               {firstName.charAt(0).toUpperCase()}
             </span>
-            <div>
+            <div className="greeting__text">
               <h1 className="greeting__name">Halo, {firstName} 👋</h1>
               <p className="greeting__hint">Semangat jualan hari ini!</p>
             </div>
+            <NotificationBell />
           </div>
 
           <div className="section-head">
