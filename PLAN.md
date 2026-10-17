@@ -711,17 +711,22 @@ Nama toko · nomor transaksi · tanggal & waktu · nama produk · kuantitas · h
 ### 10.5 Verifikasi di Perangkat Fisik (belum dilakukan)
 
 Encoder struk sudah diuji otomatis (lebar 58/80 mm, pembungkusan baris, perataan harga).
-Yang **belum** bisa diverifikasi di lingkungan pengembangan (tidak ada Android SDK/printer):
+Build APK **debug** sudah diverifikasi di lingkungan pengembangan (JDK 21 + Android SDK 36):
+`./gradlew assembleDebug` menghasilkan `app-debug.apk` ±38 MB yang memuat aset web di
+`assets/public/`. Yang **belum** bisa diverifikasi (tidak ada printer/perangkat fisik):
 
-1. Build APK: `cd mobile && npm run build && npx cap sync android`, lalu `./gradlew assembleDebug` di Android Studio.
+1. Memasang APK ke perangkat, dan `./gradlew assembleRelease` dengan keystore asli
+   (lihat [docs/RELEASE-ANDROID.md](../docs/RELEASE-ANDROID.md) §4).
 2. Pasangkan printer di pengaturan sistem Android (Bluetooth) atau sambungkan via OTG (USB).
 3. Buka **Riwayat → ikon printer** (atau ikon printer di tab Kasir), pilih jenis koneksi, "Cari perangkat",
    pilih printer, atur lebar kertas, lalu **Cetak uji**.
 4. Cetak struk nyata dari detail transaksi dan dari dialog sukses checkout (tombol "Cetak struk").
 
-Risiko yang perlu diperhatikan saat build native pertama: plugin menarik `usb-serial-for-android`
-via JitPack dan `kotlin-stdlib` 2.2.10 (lihat `android/build.gradle` plugin) — sesuaikan versi
-Gradle/Kotlin aplikasi bila ada konflik.
+Dua kendala build native pertama sudah teratasi dan terdokumentasi (tetap relevan bila versi
+dinaikkan): Capacitor 8 menargetkan Java 21 (JDK 17 gagal di `:capacitor-android`), dan
+`usb-serial-for-android` dari JitPack hanya bisa di-resolve jika `https://jitpack.io` terdaftar
+di blok `allprojects { repositories }` pada `mobile/android/build.gradle` — deklarasi repository
+di modul plugin tidak diwariskan ke `:app`.
 
 ---
 
@@ -844,7 +849,7 @@ Pilih printer target, evaluasi plugin Bluetooth/ESC-POS, implementasi `PrinterSe
 ### Phase 7 — Stabilization & Release
 
 Jalankan semua test, uji end-to-end, uji keamanan/isolasi data, uji jaringan lambat/gagal, pemulihan koneksi printer, konfigurasi production, backup DB, build & uji APK release, dokumentasi.
-**Deliverable:** MVP siap dipakai pribadi. *(hardening + dokumentasi selesai; build & uji APK release menunggu Android SDK/printer — lihat [docs/RELEASE-ANDROID.md](../docs/RELEASE-ANDROID.md))*
+**Deliverable:** MVP siap dipakai pribadi. *(hardening + dokumentasi selesai; build APK debug sudah diverifikasi, sedangkan APK release bertanda tangan & uji perangkat/printer menunggu — lihat [docs/RELEASE-ANDROID.md](../docs/RELEASE-ANDROID.md))*
 
 Yang sudah dikerjakan di Phase 7:
 

@@ -21,6 +21,10 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // usb-serial-for-android (dipakai @devlas/capacitor-thermal-printer) hanya ada di
+        // JitPack. Repositori plugin tidak diwariskan ke project yang mengonsumsinya, jadi
+        // JitPack harus didaftarkan di sini agar :app bisa me-resolve dependensi transitifnya.
+        maven { url 'https://jitpack.io' }
     }
 }
 

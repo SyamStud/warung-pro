@@ -33,7 +33,7 @@ Warung/
 - **Phase 4.5 — Antrean Offline (durable queue):** selesai (perubahan produk saat offline disimpan permanen di perangkat dan disinkron otomatis saat online kembali).
 - **Phase 5 — POS:** selesai (keranjang, kuantitas, diskon, pembayaran & kembalian, transaksi atomik dengan idempotency key, snapshot item, riwayat & detail).
 - **Phase 6 — Cetak Struk:** selesai pada level kode (encoder ESC/POS 58/80 mm + transport Bluetooth/USB/WiFi + pengaturan printer + cetak uji + cetak & cetak ulang). **Verifikasi pada printer fisik masih tertunda.**
-- **Phase 7 — Stabilisasi & Rilis:** selesai pada level kode & dokumentasi (rate limiting, konfigurasi produksi, prosedur backup/restore, scaffolding signing rilis Android, checklist acceptance). **Build & uji APK release serta uji perangkat masih tertunda.**
+- **Phase 7 — Stabilisasi & Rilis:** selesai pada level kode & dokumentasi (rate limiting, konfigurasi produksi, prosedur backup/restore, scaffolding signing rilis Android, checklist acceptance). **Build APK debug sudah diverifikasi; build APK release bertanda tangan serta uji perangkat/printer masih tertunda.**
 - **Penyimpanan token aman:** selesai (Android Keystore + AES-GCM, migrasi otomatis dari Preferences).
 - **Phase 8 — Resolusi Konflik Multi-Perangkat (P2):** selesai pada level kode & test (kolom
   `version`, `409 CONFLICT` + baris server terkini, item bentrok diparkir di antrean, dialog
@@ -93,7 +93,7 @@ Bila produk yang sama diubah dari dua perangkat, perubahan **tidak** saling meni
 - Node.js >= 20, npm/pnpm
 - PHP >= 8.5, Composer
 - PostgreSQL >= 15 (produksi; lokal bisa pakai SQLite)
-- Android Studio + JDK 17 (untuk build Android)
+- Android Studio + JDK 21 (untuk build Android; Capacitor 8 menargetkan Java 21)
 
 ## Menjalankan Backend
 

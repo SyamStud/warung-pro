@@ -10,7 +10,14 @@ Capacitor di `mobile/`, plus checklist verifikasi di perangkat fisik.
 
 ## 1. Prasyarat
 
-- Android Studio + **JDK 17** + Android SDK (compileSdk 36).
+- Android Studio + **JDK 21** + Android SDK (compileSdk 36). Capacitor 8 menyetel
+  `sourceCompatibility`/`targetCompatibility` ke Java 21 di
+  `android/app/capacitor.build.gradle`, jadi JDK 17 tidak cukup — kalau mesin hanya punya
+  JDK 17, unduh Temurin 21 ke folder lokal lalu arahkan `JAVA_HOME` ke sana saat memanggil
+  Gradle. Tanpa itu build berhenti di `:capacitor-android:compileDebugJavaWithJavac`
+  dengan `error: invalid source release: 21`.
+- `ANDROID_HOME` (atau `sdk.dir` di `android/local.properties`) menunjuk ke Android SDK yang
+  berisi `platforms/android-36` dan `build-tools/36.0.0`.
 - `mobile/node_modules` terpasang (`npm install`).
 - `mobile/.env` berisi `VITE_API_BASE_URL` **produksi** (HTTPS), mis.
   `https://api.example.com/api/v1`.
@@ -152,11 +159,20 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 ## 7. Catatan Plugin Printer
 
 `@devlas/capacitor-thermal-printer` menarik `usb-serial-for-android` (via JitPack)
-dan `kotlin-stdlib` 2.2.10. Bila build native pertama gagal dengan konflik versi:
+dan `kotlin-stdlib` 2.2.10.
 
-1. Jalankan `./gradlew :app:dependencies` untuk melihat konflik.
-2. Selaraskan versi Kotlin Gradle Plugin proyek dengan `2.2.10`.
-3. Pastikan `https://jitpack.io` ada di daftar repository (dideklarasikan modul plugin).
+- **JitPack wajib ada di root `allprojects { repositories }`** (`mobile/android/build.gradle`).
+  Modul plugin memang mendeklarasikan `https://jitpack.io` di `build.gradle` miliknya sendiri,
+  tetapi repositori modul tidak diwariskan ke project yang mengonsumsinya — akibatnya `:app`
+  berhenti dengan `Could not find com.github.mik3y:usb-serial-for-android:3.11.0`. Sudah
+  diperbaiki di repo; jangan hapus baris itu saat memperbarui plugin.
+- Capacitor 8 menargetkan **Java 21**. Dengan JDK 17 build berhenti di
+  `:capacitor-android:compileDebugJavaWithJavac` (`error: invalid source release: 21`).
+- Bila muncul konflik versi Kotlin, jalankan `./gradlew :app:dependencies` lalu selaraskan versi
+  Kotlin Gradle Plugin proyek dengan `2.2.10`.
+- `./gradlew assembleDebug` sudah diverifikasi berhasil (JDK 21 + Android SDK 36) dan
+  menghasilkan `app/build/outputs/apk/debug/app-debug.apk` ±38 MB berisi aset web di
+  `assets/public/`.
 
 ---
 
