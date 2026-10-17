@@ -39,7 +39,7 @@ const Login: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="screen" style={{ paddingTop: 28 }}>
+        <div className="screen screen--center">
           <div style={{ textAlign: 'center', marginBottom: 22 }}>
             <div
               style={{

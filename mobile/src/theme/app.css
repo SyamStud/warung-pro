@@ -35,6 +35,36 @@ textarea {
   margin: 0 auto;
 }
 
+/* Login & Splash: letakkan blok konten di tengah layar secara vertikal.
+   Margin `auto` (bukan `justify-content: center`) dipakai supaya saat konten lebih
+   tinggi dari layar, bagian atasnya tetap bisa di-scroll, tidak terpotong. */
+.screen--center,
+.splash {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.screen--center > :first-child,
+.splash > :first-child {
+  margin-top: auto;
+}
+
+.screen--center > :last-child,
+.splash > :last-child {
+  margin-bottom: auto;
+}
+
+.screen--center {
+  padding: 24px 16px 28px;
+}
+
+.splash {
+  align-items: center;
+  padding: 40px 28px 36px;
+  text-align: center;
+}
+
 .screen--flush {
   padding: 0 16px 28px;
 }

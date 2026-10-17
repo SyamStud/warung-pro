@@ -13,17 +13,7 @@ const Splash: React.FC = () => {
   return (
     <IonPage>
       <IonContent style={splashBackground}>
-        <div
-          style={{
-            minHeight: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '40px 28px 36px',
-            textAlign: 'center',
-          }}
-        >
+        <div className="splash">
           <div
             className="card"
             style={{
@@ -53,12 +43,15 @@ const Splash: React.FC = () => {
             Cek harga &amp; kasir untuk warung kamu
           </p>
 
-          <div style={{ flex: 1, minHeight: 28 }} />
-
           <button
             type="button"
             className="btn"
-            style={{ background: '#fff', color: 'var(--app-blue-dark)', maxWidth: 320 }}
+            style={{
+              background: '#fff',
+              color: 'var(--app-blue-dark)',
+              maxWidth: 320,
+              marginTop: 30,
+            }}
             onClick={() => navigate('/login')}
           >
             Mulai
@@ -67,7 +60,7 @@ const Splash: React.FC = () => {
             style={{
               color: 'rgba(255,255,255,.7)',
               fontSize: 10.8,
-              margin: '14px 0 0',
+              marginTop: 14,
             }}
           >
             Harga &amp; total dihitung oleh server
