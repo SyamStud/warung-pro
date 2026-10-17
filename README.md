@@ -14,6 +14,7 @@ Warung/
 ├── backend/   # Laravel REST API + PostgreSQL
 ├── mobile/    # Ionic React + Capacitor (Android)
 ├── docs/      # Dokumentasi tambahan
+├── scripts/   # rilis.sh — terbitkan versi baru dalam satu perintah
 └── PLAN.md    # Rencana MVP
 ```
 
@@ -213,7 +214,18 @@ memeriksa `GET /app/release` dan membandingkan `version_code` terbaru di server 
 - Belum ada rilis, offline, atau backend tidak menjawab → tidak ada notifikasi apa pun; aplikasi
   berjalan seperti biasa.
 
-Menerbitkan versi baru (backend di laptop yang sama):
+Menerbitkan versi baru — satu perintah dari akar repo:
+
+```bash
+scripts/rilis.sh "Perbaikan pemindai barcode"
+```
+
+Skrip itu menaikkan `versionCode` + `versionName`, build APK, lalu menerbitkannya ke backend. Ia
+menolak jalan kalau `versionCode` tidak lebih baru dari rilis yang sudah terbit (aplikasi yang
+terpasang tidak akan ditawari) dan memilih sendiri JDK 21 yang dibutuhkan Capacitor. Opsi lain
+(`--release`, `--tanpa-terbit`, `--versi`, `--naik`): `scripts/rilis.sh --help`.
+
+Kalau lebih suka manual, ketiga langkah itu tetap bisa dijalankan sendiri:
 
 ```bash
 # 1. naikkan versionCode/versionName di mobile/android/app/build.gradle

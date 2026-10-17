@@ -987,6 +987,19 @@ Alurnya:
    akan **menggantikan** baris sebelumnya (berguna bila berkas perlu dibuild ulang), bukan membuat
    baris baru.
 
+Ketiga langkah itu dibungkus satu perintah dari akar repo:
+
+```bash
+scripts/rilis.sh "Perbaikan pemindai barcode"
+```
+
+Skrip itu menaikkan `versionCode`/`versionName` otomatis, build APK lewat `npm run build` +
+`npm run sync:lan` + `assembleDebug`, menyalinnya ke `~/Downloads/warung-pos-debug.apk`, lalu
+menerbitkannya. Ia **berhenti lebih dulu** (tanpa mengubah apa pun) bila `versionCode` hasil
+kenaikan tidak lebih baru dari rilis yang sudah terbit — kesalahan yang membuat aplikasi terpasang
+tidak pernah ditawari versi baru. Ia juga memilih sendiri JDK 21 (Capacitor 8 menolak JDK 17) dan
+mengenali `--release`, `--versi`, `--naik`, `--tanpa-terbit`, `--paksa`.
+
 4. Setiap aplikasi yang terpasang memeriksa rilis terbaru **saat dibuka** (juga setelah buka ulang),
    membandingkan `version_code` dengan `versionCode` dirinya, lalu menampilkan strip
    **Versi x.y.z tersedia** di Beranda.

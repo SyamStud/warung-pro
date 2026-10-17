@@ -233,7 +233,14 @@ dan `kotlin-stdlib` 2.2.10.
 
 ### Notifikasi pembaruan (yang sudah terpasang ikut diberi tahu)
 
-Setelah APK di-build, terbitkan ke backend:
+Cara tercepat — satu perintah dari akar repo:
+
+```bash
+scripts/rilis.sh "Perbaikan pemindai barcode"
+```
+
+Skrip itu menaikkan versi, build APK, dan menerbitkannya sekaligus (lihat `--help` untuk opsi).
+Langkah manualnya kalau diperlukan:
 
 ```bash
 cd backend
