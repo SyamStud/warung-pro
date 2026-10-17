@@ -53,16 +53,21 @@ class Product extends Model
     }
 
     /**
-     * Match by name or SKU using a single term.
+     * Match by name or SKU using a single term, ignoring letter case.
+     *
+     * Perbandingannya lewat `lower(...) like lower(...)`, bukan `like` biasa:
+     * PostgreSQL membandingkan `like` secara peka huruf besar/kecil sementara
+     * SQLite tidak, jadi tanpa ini pencarian "indomie" tidak menemukan
+     * "Indomie Goreng" di server PostgreSQL.
      */
     #[Scope]
     protected function search(Builder $query, string $term): Builder
     {
-        $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
+        $like = '%'.mb_strtolower(str_replace(['%', '_'], ['\\%', '\\_'], $term)).'%';
 
         return $query->where(function (Builder $query) use ($like) {
-            $query->where('name', 'like', $like)
-                ->orWhere('sku', 'like', $like);
+            $query->whereRaw('lower(name) like ?', [$like])
+                ->orWhereRaw('lower(sku) like ?', [$like]);
         });
     }
 }

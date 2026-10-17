@@ -381,4 +381,19 @@ class TransactionControllerTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $wanted->id);
     }
+
+    public function test_index_search_ignores_letter_case(): void
+    {
+        $user = User::factory()->create();
+        $wanted = Transaction::factory()->for($user)->create(['transaction_number' => 'TRX-20260101-0007']);
+
+        Sanctum::actingAs($user);
+
+        // `like` PostgreSQL peka huruf besar/kecil, jadi nomor transaksi yang
+        // diketik huruf kecil tetap harus menemukannya.
+        $this->getJson('/api/v1/transactions?search=trx-20260101-0007')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $wanted->id);
+    }
 }

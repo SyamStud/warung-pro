@@ -20,7 +20,13 @@ return new class extends Migration
         // Drop the strict (user_id, sku) index first: the backfill below may
         // reuse a code held by an archived row, which the new partial index
         // allows but the old one did not.
-        DB::statement('DROP INDEX IF EXISTS products_user_id_sku_unique');
+        //
+        // Lewat schema builder, bukan `DROP INDEX`: PostgreSQL membuatnya
+        // sebagai *constraint* (bukan index lepas), yang hanya bisa dibuang
+        // dengan `ALTER TABLE … DROP CONSTRAINT`.
+        Schema::table('products', function (Blueprint $table): void {
+            $table->dropUnique('products_user_id_sku_unique');
+        });
 
         $this->promoteProductBarcodes();
         $this->promoteItemBarcodes();

@@ -339,6 +339,28 @@ class ProductControllerTest extends TestCase
             ->assertJsonPath('data.0.sku', 'ROTI-01');
     }
 
+    public function test_index_search_ignores_letter_case(): void
+    {
+        $user = User::factory()->create();
+        Product::factory()->for($user)->create([
+            'name' => 'Indomie Goreng',
+            'sku' => 'AB-01',
+        ]);
+        Sanctum::actingAs($user);
+
+        // `like` di PostgreSQL peka huruf besar/kecil, jadi pencarian dengan
+        // huruf kecil harus tetap menemukan nama & SKU yang berhuruf besar.
+        $this->getJson('/api/v1/products?search=indomie')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Indomie Goreng');
+
+        $this->getJson('/api/v1/products?search=ab-01')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.sku', 'AB-01');
+    }
+
     public function test_index_sorts_by_name_and_price(): void
     {
         $user = User::factory()->create();

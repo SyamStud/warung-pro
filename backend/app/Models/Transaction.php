@@ -58,13 +58,14 @@ class Transaction extends Model
     }
 
     /**
-     * Match a transaction by its number using a single term.
+     * Match a transaction by its number using a single term, ignoring letter case
+     * (lihat Product::search() soal perbedaan `like` PostgreSQL vs SQLite).
      */
     #[Scope]
     protected function search(Builder $query, string $term): Builder
     {
-        $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
+        $like = '%'.mb_strtolower(str_replace(['%', '_'], ['\\%', '\\_'], $term)).'%';
 
-        return $query->where('transaction_number', 'like', $like);
+        return $query->whereRaw('lower(transaction_number) like ?', [$like]);
     }
 }
