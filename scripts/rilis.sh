@@ -201,5 +201,6 @@ Langkah setelah ini:
        git commit -m "chore(rilis): $nama_baru ($kode_baru)"
   2. Pastikan backend jalan supaya HP bisa memeriksa versi:
        cd backend && php artisan serve --host=0.0.0.0 --port=8000
-  3. Buka aplikasi di HP → Beranda menampilkan "Versi $nama_baru tersedia".
+  3. Buka aplikasi di HP → lonceng di Beranda bertanda; halaman Notifikasi
+     memuat "Versi $nama_baru tersedia".
 TXT
