@@ -218,6 +218,11 @@ Sapaan pengguna, **4 kartu aksi cepat** (Cek Harga · Tambah Produk · Kasir · 
 > on-demand agar tidak membebani bundel). Keduanya berbagi alur izin kamera dan `lookup`
 > yang sama; setiap kegagalan pratinjau berakhir pada pesan + tombol ML Kit, bukan jalan buntu.
 > Uji pada kamera perangkat fisik masih tertunda (§10.5).
+>
+> Umpan balik saat barcode terbaca: **suara beep** dua nada (1568 → 2093 Hz, dibuat
+> lewat Web Audio API — tanpa file audio, jadi tidak bisa diblokir kebijakan autoplay
+> media) dan getaran singkat dari `@capacitor/haptics`. Tombol ML Kit memakai beep
+> bawaan UI native-nya sendiri.
 
 ### 4.5 Katalog Produk
 

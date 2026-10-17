@@ -155,6 +155,8 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 - [ ] Cek Harga: pratinjau kamera hidup di dalam app dan hasil pindai langsung muncul; tombol
       **Pindai Barcode** (UI kamera native ML Kit) juga masih berfungsi. Saat izin kamera
       ditolak, muncul pesan jelas dan tombol ML Kit tetap bisa dipakai.
+- [ ] Cek Harga: **beep** terdengar dan perangkat **bergetar** tepat saat barcode terbaca
+      (volume media perangkat naik; beep ikut volume media, bukan volume alarm).
 - [ ] Perubahan dari perangkat lain terlihat setelah refresh.
 - [ ] Perangkat lain (akun berbeda) tidak melihat data pengguna ini.
 

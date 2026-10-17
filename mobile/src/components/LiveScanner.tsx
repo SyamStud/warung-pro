@@ -10,6 +10,7 @@ import {
   videocamOffOutline,
 } from 'ionicons/icons';
 import { ScannerError, scannerService } from '../services/scanner';
+import { playScanBeep, primeBeep } from '../lib/beep';
 
 type PreviewState = 'off' | 'starting' | 'live' | 'blocked' | 'unavailable';
 
@@ -58,6 +59,10 @@ const LiveScanner: React.FC<LiveScannerProps> = ({ active, onToggle, onDetected 
   const [state, setState] = useState<PreviewState>(active ? 'starting' : 'off');
   const [message, setMessage] = useState('Menyalakan kamera…');
   const [attempt, setAttempt] = useState(0);
+
+  // Android WebViews hold an AudioContext suspended until the first gesture;
+  // unlocking it here means the very first scan already beeps.
+  useEffect(() => primeBeep(), []);
 
   useEffect(() => {
     if (!active) {
@@ -155,6 +160,7 @@ const LiveScanner: React.FC<LiveScannerProps> = ({ active, onToggle, onDetected 
           .decodeFromStream(stream, video as HTMLVideoElement, (result) => {
             if (!result || detectedRef.current) return;
             detectedRef.current = true;
+            playScanBeep();
             void Haptics.impact({ style: ImpactStyle.Medium }).catch(() => undefined);
             onDetectedRef.current(result.getText());
           })

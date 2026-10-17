@@ -7,6 +7,12 @@ const stopTrack = vi.fn();
 const ensureCameraPermission = vi.fn<() => Promise<void>>();
 const decodeFromStream = vi.fn();
 const stopContinuousDecode = vi.fn();
+const playScanBeep = vi.fn();
+
+vi.mock('../lib/beep', () => ({
+  playScanBeep: () => playScanBeep(),
+  primeBeep: () => () => undefined,
+}));
 
 vi.mock('../services/scanner', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/scanner')>();
@@ -56,6 +62,7 @@ test('menyalakan kamera dan mengirim hasil pindai pertama', async () => {
   render(<LiveScanner active onToggle={() => {}} onDetected={onDetected} />);
 
   await waitFor(() => expect(onDetected).toHaveBeenCalledWith('8991234567890'));
+  expect(playScanBeep).toHaveBeenCalledTimes(1);
   expect(screen.getByText('Pindai otomatis')).toBeTruthy();
   expect(
     screen.getByText(/Arahkan barcode ke dalam bingkai/i),

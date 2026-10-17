@@ -197,7 +197,7 @@ tersembunyi): **Cek Harga**, **Pembayaran**, **Preview Struk**, dan **Kelola Kat
 | Layar | Isi |
 |---|---|
 | **Beranda** | Sapaan, 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru |
-| **Cek Harga** | Pencarian nama/SKU, viewfinder dengan **kamera langsung di dalam app**, tombol **Pindai Barcode** (kamera native ML Kit), kartu hasil + **Tambahkan ke Keranjang** |
+| **Cek Harga** | Pencarian nama/SKU, viewfinder dengan **kamera langsung di dalam app** + **suara beep & getar** saat barcode terbaca, tombol **Pindai Barcode** (kamera native ML Kit), kartu hasil + **Tambahkan ke Keranjang** |
 | **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+**; tombol kategori di kanan judul membuka **Kelola Kategori** |
 | **Kelola Kategori** | Tambah, ubah nama, dan hapus kategori. Menghapus kategori tidak menghapus produknya — produknya hanya jadi tanpa kategori |
 | **POS** | Pencarian/scan, hasil pencarian tampil sebagai popup di atas keranjang, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
