@@ -144,14 +144,17 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
 
 ### Katalog & Price Checker
-- [ ] Splash → Login; token tersimpan setelah app ditutup.
+- [ ] Splash → Login; token tersimpan setelah app ditutup, dan sesi tetap aktif saat backend
+      tidak terjangkau (hanya logout atau `401` yang memaksa login ulang).
 - [ ] Beranda: sapaan, kartu aksi cepat, produk terbaru.
 - [ ] Tambah produk (SKU digenerate, diketik manual, dan diisi dari scan), edit, arsipkan.
 - [ ] SKU yang diarsipkan bisa dipakai ulang untuk produk baru.
 - [ ] Pindai barcode → harga benar; kode tak dikenal → tawaran tambah produk (SKU terisi).
 - [ ] Cari di **Cek Harga** dan **Katalog Produk**; urutkan katalog (Terbaru/Nama/Harga).
 - [ ] Halaman Cek Harga / Pembayaran / Struk tidak menampilkan tab bar.
-- [ ] Bingkai kamera hanya penanda visual: menekan **Pindai Barcode** membuka UI kamera native.
+- [ ] Cek Harga: pratinjau kamera hidup di dalam app dan hasil pindai langsung muncul; tombol
+      **Pindai Barcode** (UI kamera native ML Kit) juga masih berfungsi. Saat izin kamera
+      ditolak, muncul pesan jelas dan tombol ML Kit tetap bisa dipakai.
 - [ ] Perubahan dari perangkat lain terlihat setelah refresh.
 - [ ] Perangkat lain (akun berbeda) tidak melihat data pengguna ini.
 

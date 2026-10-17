@@ -26,8 +26,36 @@ export class ScannerError extends Error {
  * Thin wrapper over the native barcode scanner so screens never depend on a
  * specific plugin API directly (PLAN.md §10).
  */
+/**
+ * Make sure the OS has granted camera access. Both scan paths need it: the
+ * native ML Kit UI (`scan`) and the in-app preview (`getUserMedia` inside the
+ * WebView, which only works once the app itself holds the permission).
+ */
+async function ensureCameraPermission(): Promise<void> {
+  // In a plain browser the page asks on its own when the preview starts.
+  if (!Capacitor.isNativePlatform()) return;
+
+  try {
+    const status = await BarcodeScanner.checkPermissions();
+    if (status.camera === 'granted') return;
+
+    const requested = await BarcodeScanner.requestPermissions();
+    if (requested.camera !== 'granted') {
+      throw new ScannerError(
+        'permission',
+        'Izin kamera ditolak. Aktifkan izin kamera untuk memindai.',
+      );
+    }
+  } catch (error) {
+    if (error instanceof ScannerError) throw error;
+    throw new ScannerError('permission', 'Tidak dapat mengakses kamera.');
+  }
+}
+
 export const scannerService = {
   isNativePlatform: (): boolean => Capacitor.isNativePlatform(),
+
+  ensureCameraPermission,
 
   /**
    * Open the camera scanner and return the first detected barcode, or null if
@@ -51,21 +79,7 @@ export const scannerService = {
       throw new ScannerError('unsupported', 'Perangkat ini tidak mendukung pemindaian barcode.');
     }
 
-    try {
-      const status = await BarcodeScanner.checkPermissions();
-      if (status.camera !== 'granted') {
-        const requested = await BarcodeScanner.requestPermissions();
-        if (requested.camera !== 'granted') {
-          throw new ScannerError(
-            'permission',
-            'Izin kamera ditolak. Aktifkan izin kamera untuk memindai.',
-          );
-        }
-      }
-    } catch (error) {
-      if (error instanceof ScannerError) throw error;
-      throw new ScannerError('permission', 'Tidak dapat mengakses kamera.');
-    }
+    await ensureCameraPermission();
 
     try {
       const { barcodes } = await BarcodeScanner.scan();

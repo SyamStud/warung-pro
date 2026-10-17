@@ -204,14 +204,20 @@ Sapaan pengguna, **4 kartu aksi cepat** (Cek Harga · Tambah Produk · Kasir · 
 
 | Elemen | Perilaku |
 |---|---|
-| View finder | Bingkai kamera bergaya mockup; mengetuk **Pindai Barcode** membuka kamera native lalu `lookup` |
+| View finder | Kamera **langsung di dalam app** (pratinjau + pindai otomatis); tombol **Pindai Barcode** tetap membuka UI kamera native ML Kit sebagai cara kedua |
 | Search bar | Cari nama/SKU, debounce 300 ms |
 | Hasil pencarian | Daftar produk (nama, SKU, harga) |
 | Kartu hasil | Nama, harga besar, SKU, satuan, tombol **Tambahkan ke Keranjang** |
 | State "tidak ditemukan" | Pesan jelas + tombol **Tambah produk** (SKU terisi otomatis) |
 | Error state | Izin kamera ditolak / scanner gagal / jaringan putus |
 
-> Catatan: `@capacitor-mlkit/barcode-scanning` membuka UI kamera native sendiri, jadi bingkai pada layar ini adalah penanda visual, bukan pratinjau kamera langsung.
+> Dua cara memindai: (1) pratinjau kamera langsung di dalam app — WebView mengambil
+> gambar lewat `getUserMedia`, lalu frame didekode di app; dan (2) tombol **Pindai Barcode**
+> yang membuka UI native `@capacitor-mlkit/barcode-scanning`. WebView Android tidak
+> menyediakan `BarcodeDetector`, jadi dekode di app memakai zxing (`@zxing/library`, dimuat
+> on-demand agar tidak membebani bundel). Keduanya berbagi alur izin kamera dan `lookup`
+> yang sama; setiap kegagalan pratinjau berakhir pada pesan + tombol ML Kit, bukan jalan buntu.
+> Uji pada kamera perangkat fisik masih tertunda (§10.5).
 
 ### 4.5 Katalog Produk
 

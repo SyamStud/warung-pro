@@ -15,7 +15,6 @@ import {
   refreshOutline,
   scanOutline,
   searchOutline,
-  sparklesOutline,
 } from 'ionicons/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +23,7 @@ import { productsApi } from '../api/products';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductRow from '../components/ProductRow';
 import ConnectionBanner from '../components/ConnectionBanner';
+import LiveScanner from '../components/LiveScanner';
 import PageHeader from '../components/PageHeader';
 import SyncStatus from '../components/SyncStatus';
 import { useCart } from '../cart/useCart';
@@ -37,11 +37,11 @@ import { ScannerError, scannerService } from '../services/scanner';
 import type { Product } from '../types';
 
 /**
- * 4 · Cek Harga — camera viewfinder plus the search result card.
+ * 4 · Cek Harga — a live in-app camera plus the search result card.
  *
- * The live preview is a styled placeholder: `@capacitor-mlkit/barcode-scanning`
- * opens its own native fullscreen camera, so tapping the viewfinder launches
- * that UI. On the web the scanner reports `unsupported`.
+ * Two ways to scan: the viewfinder streams the camera inside the app
+ * (`LiveScanner`), and the **Pindai Barcode** button still opens the native
+ * ML Kit camera. The search field sits above both.
  */
 const PriceChecker: React.FC = () => {
   const navigate = useNavigate();
@@ -56,6 +56,7 @@ const PriceChecker: React.FC = () => {
 
   const [result, setResult] = useState<Product | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [cameraOn, setCameraOn] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [formSku, setFormSku] = useState<string | undefined>(undefined);
 
@@ -122,8 +123,13 @@ const PriceChecker: React.FC = () => {
   };
 
   const handleScan = async () => {
+    // The in-app preview and the native ML Kit camera cannot hold the camera at
+    // the same time, so let go of the stream first.
+    const resumePreview = cameraOn;
+    setCameraOn(false);
     setScanning(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 250));
       const scanned = await scannerService.scan();
       if (scanned?.value) {
         await lookupCode(scanned.value);
@@ -136,6 +142,7 @@ const PriceChecker: React.FC = () => {
       }
     } finally {
       setScanning(false);
+      if (resumePreview) setCameraOn(true);
     }
   };
 
@@ -163,42 +170,7 @@ const PriceChecker: React.FC = () => {
         <div className="screen">
           {result === null ? (
             <>
-              <div className="viewfinder">
-                <span className="badge badge--blue viewfinder__badge">
-                  <IonIcon icon={sparklesOutline} /> Mode pindai
-                </span>
-                <div className="viewfinder__frame">
-                  <span className="viewfinder__laser" />
-                </div>
-              </div>
-
-              <p
-                style={{
-                  textAlign: 'center',
-                  color: 'var(--app-muted)',
-                  fontSize: 11.7,
-                  margin: '12px 0 14px',
-                }}
-              >
-                Arahkan kamera ke barcode produk
-              </p>
-
-              <button
-                type="button"
-                className="btn btn--primary"
-                style={{ marginTop: 0 }}
-                disabled={scanning}
-                onClick={handleScan}
-              >
-                {scanning ? <IonSpinner name="dots" /> : <IonIcon icon={scanOutline} />}
-                {scanning ? 'Memindai...' : 'Pindai Barcode'}
-              </button>
-
-              <p style={{ textAlign: 'center', color: 'var(--app-muted)', fontSize: 11.7, margin: '10px 0 18px' }}>
-                atau cari produk berdasarkan nama / SKU
-              </p>
-
-              <div className="search">
+              <div className="search" style={{ marginTop: 4 }}>
                 <IonIcon className="search__icon" icon={searchOutline} aria-hidden="true" />
                 <input
                   value={search}
@@ -255,6 +227,31 @@ const PriceChecker: React.FC = () => {
                   ))}
                 </div>
               )}
+
+              <div className="or-split">
+                <span>atau pindai barcode</span>
+              </div>
+
+              <LiveScanner
+                active={cameraOn}
+                onToggle={() => setCameraOn((value) => !value)}
+                onDetected={(value) => void lookupCode(value)}
+              />
+
+              <button
+                type="button"
+                className="btn btn--primary"
+                style={{ marginTop: 0 }}
+                disabled={scanning}
+                onClick={handleScan}
+              >
+                {scanning ? <IonSpinner name="dots" /> : <IonIcon icon={scanOutline} />}
+                {scanning ? 'Memindai...' : 'Pindai Barcode'}
+              </button>
+
+              <p className="viewfinder__note">
+                Membuka kamera penuh bawaan Google (ML Kit)
+              </p>
             </>
           ) : (
             <>

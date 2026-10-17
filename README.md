@@ -34,7 +34,7 @@ Warung/
 - **Phase 5 — POS:** selesai (keranjang, kuantitas, diskon, pembayaran & kembalian, transaksi atomik dengan idempotency key, snapshot item, riwayat & detail).
 - **Phase 6 — Cetak Struk:** selesai pada level kode (encoder ESC/POS 58/80 mm + transport Bluetooth/USB/WiFi + pengaturan printer + cetak uji + cetak & cetak ulang). **Verifikasi pada printer fisik masih tertunda.**
 - **Phase 7 — Stabilisasi & Rilis:** selesai pada level kode & dokumentasi (rate limiting, konfigurasi produksi, prosedur backup/restore, scaffolding signing rilis Android, checklist acceptance). **Build APK debug sudah diverifikasi; build APK release bertanda tangan serta uji perangkat/printer masih tertunda.**
-- **Penyimpanan token aman:** selesai (Android Keystore + AES-GCM, migrasi otomatis dari Preferences).
+- **Penyimpanan token aman & sesi menempel (sticky):** selesai (Android Keystore + AES-GCM, migrasi otomatis dari Preferences). Profil pengguna ikut disimpan, jadi setelah sekali login aplikasi langsung terbuka di Beranda — termasuk saat backend tidak terjangkau. Sesi hanya berakhir bila pengguna menekan **Keluar** atau server menolak token (`401`); kegagalan jaringan tidak pernah mengeluarkan pengguna.
 - **Phase 8 — Resolusi Konflik Multi-Perangkat (P2):** selesai pada level kode & test (kolom
   `version`, `409 CONFLICT` + baris server terkini, item bentrok diparkir di antrean, dialog
   perbandingan per-field). **Uji dua perangkat masih tertunda.**
@@ -197,7 +197,7 @@ tersembunyi): **Cek Harga**, **Pembayaran**, **Preview Struk**, dan **Kelola Kat
 | Layar | Isi |
 |---|---|
 | **Beranda** | Sapaan, 4 kartu aksi cepat (Cek Harga · Tambah Produk · Kasir · Riwayat), produk terbaru |
-| **Cek Harga** | Bingkai kamera + tombol **Pindai Barcode**, pencarian nama/SKU, kartu hasil + **Tambahkan ke Keranjang** |
+| **Cek Harga** | Pencarian nama/SKU, viewfinder dengan **kamera langsung di dalam app**, tombol **Pindai Barcode** (kamera native ML Kit), kartu hasil + **Tambahkan ke Keranjang** |
 | **Produk** | Pencarian, chip kategori, pemilih urutan, daftar produk (thumbnail · nama · SKU · harga), modal detail, tombol **+**; tombol kategori di kanan judul membuka **Kelola Kategori** |
 | **Kelola Kategori** | Tambah, ubah nama, dan hapus kategori. Menghapus kategori tidak menghapus produknya — produknya hanya jadi tanpa kategori |
 | **POS** | Pencarian/scan, hasil pencarian tampil sebagai popup di atas keranjang, keranjang dengan stepper kuantitas, subtotal, **Lanjut ke Pembayaran** |
