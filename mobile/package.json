@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "sync:lan": "CAP_ALLOW_HTTP=1 cap sync android",
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest",

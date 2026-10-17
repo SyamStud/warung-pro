@@ -38,6 +38,31 @@ npx cap sync android
 `npx cap sync android` menyalin aset web ke proyek Android dan mendaftarkan plugin
 native (termasuk printer thermal). Jalankan setiap kali kode web berubah.
 
+### Build debug untuk server HTTP di jaringan (LAN / Tailscale)
+
+APK **release** wajib HTTPS (lihat §1). Untuk menguji build **debug** terhadap server
+Laravel yang berjalan dengan HTTP polos di laptop:
+
+```bash
+# backend: bind ke semua interface
+php artisan serve --host=0.0.0.0 --port=8000
+# mobile: VITE_API_BASE_URL = http://<ip-laptop>:8000/api/v1  (LAN atau IP Tailscale)
+npm run build
+npm run sync:lan                                        # = CAP_ALLOW_HTTP=1 cap sync android
+cd android && ./gradlew assembleDebug
+```
+
+Halaman aplikasi dimuat WebView dari `https://localhost`, jadi request ke API HTTP polos
+terhitung *mixed content* sekaligus *cleartext*. Dua hal ini yang membukanya, dan
+keduanya **hanya berlaku di build debug**:
+
+- `npm run sync:lan` menulis `allowMixedContent: true` ke `capacitor.config.json`
+  (sync biasa tetap `false`).
+- `android/app/src/debug/AndroidManifest.xml` menyetel `usesCleartextTraffic="true"`.
+
+Sudah diverifikasi lewat `aapt2 dump xmltree`: APK debug memuat keduanya, sedangkan APK
+release tidak punya `usesCleartextTraffic` dan tetap `allowMixedContent: false`.
+
 ---
 
 ## 3. Menaikkan Versi

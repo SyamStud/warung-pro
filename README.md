@@ -107,6 +107,12 @@ php artisan serve          # http://localhost:8000
 php artisan test           # jalankan test
 ```
 
+Agar bisa diakses dari HP (bukan hanya laptop), bind ke semua interface:
+
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+```
+
 Untuk memakai PostgreSQL, set `DB_CONNECTION=pgsql` dan variabel `DB_*` di `.env`
 (lihat contoh di `backend/.env.example`), lalu jalankan `php artisan migrate`.
 
@@ -126,6 +132,34 @@ npx cap open android       # buka di Android Studio
 
 > Saat menguji di emulator Android, `localhost` mengarah ke perangkat itu sendiri.
 > Gunakan `http://10.0.2.2:8000/api/v1` sebagai `VITE_API_BASE_URL`.
+
+### Menguji APK di HP (backend jalan di laptop)
+
+1. Jalankan backend di semua interface: `php artisan serve --host=0.0.0.0 --port=8000`.
+2. Set `VITE_API_BASE_URL` ke alamat laptop yang bisa dijangkau HP — IP LAN
+   (mis. `http://192.168.1.14:8000/api/v1`) atau **IP Tailscale**
+   (mis. `http://100.112.0.37:8000/api/v1`) bila HP juga terpasang Tailscale,
+   sehingga bisa diuji dari jaringan mana pun.
+3. Build lalu pasang APK-nya:
+
+```bash
+npm run build
+npm run sync:lan                                        # = CAP_ALLOW_HTTP=1 cap sync android
+cd android && ./gradlew assembleDebug
+# APK: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Halaman aplikasi dimuat dari `https://localhost` sementara API-nya masih HTTP polos,
+jadi dua hal perlu diizinkan — keduanya **hanya untuk build debug**:
+
+- `npm run sync:lan` menulis `allowMixedContent: true` ke `capacitor.config.json`
+  (sync biasa tetap `false`).
+- `mobile/android/app/src/debug/AndroidManifest.xml` menyetel
+  `usesCleartextTraffic="true"`.
+
+Build release tidak memakai keduanya, sehingga APK produksi tetap menolak HTTP polos
+dan wajib HTTPS. Build Android memerlukan JDK 21 (lihat
+[docs/RELEASE-ANDROID.md](./docs/RELEASE-ANDROID.md) §1).
 
 ## Kontrak API
 

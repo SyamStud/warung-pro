@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'cypress.config.ts'] },
+  // `android` berisi proyek Capacitor (aset web hasil salinan + artefak build Gradle),
+  // bukan kode sumber — jangan ikut di-lint.
+  { ignores: ['dist', 'android', 'cypress.config.ts'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

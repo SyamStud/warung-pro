@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Override khusus build debug: mengizinkan HTTP polos agar APK debug bisa memanggil
+  server Laravel di jaringan lokal (mis. http://192.168.1.14:8000/api/v1).
+
+  Build release tidak memakai file ini, jadi kebijakan produksi tetap "HTTPS saja"
+  (lihat capacitor.config.ts dan docs/RELEASE-ANDROID.md).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="true" />
+</manifest>
