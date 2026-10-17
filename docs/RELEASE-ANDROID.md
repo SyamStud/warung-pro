@@ -157,6 +157,10 @@ Kerjakan dengan **API produksi** dan satu perangkat Android nyata.
       ditolak, muncul pesan jelas dan tombol ML Kit tetap bisa dipakai.
 - [ ] Cek Harga: **beep** terdengar dan perangkat **bergetar** tepat saat barcode terbaca
       (volume media perangkat naik; beep ikut volume media, bukan volume alarm).
+- [ ] Cek Harga: barcode yang belum terdaftar menampilkan panel di halaman dan kamera tetap
+      hidup — memindai barcode berikutnya langsung berhasil tanpa keluar dari halaman.
+- [ ] Cek Harga: barang di luar bingkai tidak terbaca (bukti pemotongan area bingkai bekerja),
+      dan tombol **Lampu** muncul hanya di perangkat yang punya torch.
 - [ ] Perubahan dari perangkat lain terlihat setelah refresh.
 - [ ] Perangkat lain (akun berbeda) tidak melihat data pengguna ini.
 

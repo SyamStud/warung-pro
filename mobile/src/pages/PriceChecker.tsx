@@ -10,6 +10,7 @@ import {
 } from '@ionic/react';
 import {
   addCircleOutline,
+  alertCircleOutline,
   cartOutline,
   closeCircle,
   refreshOutline,
@@ -42,6 +43,10 @@ import type { Product } from '../types';
  * Two ways to scan: the viewfinder streams the camera inside the app
  * (`LiveScanner`), and the **Pindai Barcode** button still opens the native
  * ML Kit camera. The search field sits above both.
+ *
+ * A barcode the catalog does not know is answered **in the page**, not with a
+ * modal: the camera keeps running and `rearmKey` clears the scanner's memory,
+ * so a misread costs one tap instead of a trip out of the screen.
  */
 const PriceChecker: React.FC = () => {
   const navigate = useNavigate();
@@ -57,6 +62,8 @@ const PriceChecker: React.FC = () => {
   const [result, setResult] = useState<Product | null>(null);
   const [scanning, setScanning] = useState(false);
   const [cameraOn, setCameraOn] = useState(true);
+  const [miss, setMiss] = useState<{ code: string; reason: 'not-found' | 'offline' } | null>(null);
+  const [rearmKey, setRearmKey] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [formSku, setFormSku] = useState<string | undefined>(undefined);
 
@@ -94,6 +101,7 @@ const PriceChecker: React.FC = () => {
       const { data } = await productsApi.lookup(code);
       setResult(data);
       setSearch('');
+      setMiss(null);
     } catch (error) {
       const notFound = error instanceof ApiError && error.code === 'NOT_FOUND';
       const offline = error instanceof ApiError && error.code === 'NETWORK_ERROR';
@@ -103,23 +111,23 @@ const PriceChecker: React.FC = () => {
         const queued = overlay.created.find((product) => product.sku === code);
         if (queued) {
           setResult(queued);
+          setMiss(null);
           return;
         }
 
-        presentAlert({
-          header: notFound ? 'Kode tidak ditemukan' : 'Tidak ada koneksi',
-          message: notFound
-            ? `SKU ${code} belum terdaftar. Tambahkan sebagai produk baru?`
-            : 'Tidak dapat mencari produk saat offline. Tambahkan sebagai produk baru?',
-          buttons: [
-            { text: 'Tutup', role: 'cancel' },
-            { text: 'Tambah produk', handler: () => openNewProduct(code) },
-          ],
-        });
+        // Reported in the page: the camera keeps running, so the user can aim
+        // again right away instead of being stuck behind a modal.
+        setMiss({ code, reason: notFound ? 'not-found' : 'offline' });
         return;
       }
       showToast(error instanceof ApiError ? error.message : 'Gagal mencari produk.', 'danger');
     }
+  };
+
+  /** "Pindai ulang": forget the code we just reported and keep the camera live. */
+  const scanAgain = () => {
+    setMiss(null);
+    setRearmKey((value) => value + 1);
   };
 
   const handleScan = async () => {
@@ -234,9 +242,46 @@ const PriceChecker: React.FC = () => {
 
               <LiveScanner
                 active={cameraOn}
+                rearmKey={rearmKey}
                 onToggle={() => setCameraOn((value) => !value)}
-                onDetected={(value) => void lookupCode(value)}
+                onDetected={(value) => {
+                  setMiss(null);
+                  void lookupCode(value);
+                }}
               />
+
+              {miss && (
+                <div className="card miss" role="status">
+                  <div className="miss__head">
+                    <IonIcon icon={alertCircleOutline} />
+                    <span>
+                      {miss.reason === 'offline' ? 'Tidak ada koneksi' : 'Barcode belum terdaftar'}
+                    </span>
+                  </div>
+                  <p className="miss__code">SKU {miss.code}</p>
+                  <p className="miss__text">
+                    {miss.reason === 'offline'
+                      ? 'Produk tidak bisa dicari saat offline. Pindai ulang, atau tambahkan sebagai produk baru.'
+                      : 'Pastikan seluruh barcode masuk ke dalam bingkai, lalu pindai ulang. Kalau kode ini memang belum terdaftar, tambahkan sebagai produk baru.'}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    style={{ marginTop: 14 }}
+                    onClick={() => openNewProduct(miss.code)}
+                  >
+                    <IonIcon icon={addCircleOutline} /> Tambah produk baru
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--plain"
+                    style={{ marginTop: 8 }}
+                    onClick={scanAgain}
+                  >
+                    <IonIcon icon={refreshOutline} /> Pindai ulang
+                  </button>
+                </div>
+              )}
 
               <button
                 type="button"
@@ -334,6 +379,8 @@ const PriceChecker: React.FC = () => {
         onDismiss={() => setFormOpen(false)}
         onSaved={(message, color) => {
           setFormOpen(false);
+          // The just-saved SKU may be the barcode still in front of the camera.
+          scanAgain();
           showToast(message, color);
         }}
       />

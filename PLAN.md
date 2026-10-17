@@ -223,6 +223,24 @@ Sapaan pengguna, **4 kartu aksi cepat** (Cek Harga · Tambah Produk · Kasir · 
 > lewat Web Audio API — tanpa file audio, jadi tidak bisa diblokir kebijakan autoplay
 > media) dan getaran singkat dari `@capacitor/haptics`. Tombol ML Kit memakai beep
 > bawaan UI native-nya sendiri.
+>
+> **Akurasi & kecepatan dekode di app** (§4.4, diuji lewat video barcode asli):
+> - Hanya area **bingkai** yang didekode — persegi bingkai dipetakan balik ke piksel video
+>   (video ditampilkan `object-fit: cover`, jadi pemetaannya memperhitungkan cropping).
+>   Barang di luar bingkai tidak ikut dibaca, jadi latar belakang tidak memicu salah baca.
+> - Format dibatasi ke 1D retail yang **ber-checksum** (EAN-13/8, UPC-A/E, Code 128).
+>   CODE-39/ITF (sumber utama salah baca) dan detektor 2D yang mahal dimatikan di app;
+>   kode 2D tetap bisa lewat tombol ML Kit.
+> - Satu bacaan **tidak langsung dipercaya**: nilai yang sama harus terbaca dua kali
+>   berturut-turut dalam 1,2 detik. Beep dan harga baru muncul setelah itu.
+> - Setiap percobaan hanya memproses ±(0,3–0,9) MP, ~9 percobaan/detik, dan kamera diminta
+>   **fokus kontinu**; tombol lampu muncul otomatis bila perangkat punya torch.
+>
+> **Kode tak dikenal tidak lagi mematikan pemindai.** Dulu kegagalan `lookup` memunculkan
+> modal dan latch pemindai tetap tertutup, sehingga pengguna harus keluar-masuk halaman
+> untuk memindai lagi. Sekarang hasilnya muncul sebagai panel di halaman (SKU apa adanya,
+> tombol **Pindai ulang** dan **Tambah produk baru**) sementara kamera tetap berjalan;
+> pencarian kode berikutnya langsung dilaporkan tanpa me-restart kamera.
 
 ### 4.5 Katalog Produk
 

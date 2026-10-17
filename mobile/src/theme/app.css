@@ -1021,6 +1021,36 @@ select.input {
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg, transparent, #93c5fd, transparent);
+  animation: viewfinder-sweep 2.2s ease-in-out infinite;
+}
+
+/* A moving line reads as "still looking", which a static frame does not. */
+@keyframes viewfinder-sweep {
+  0% {
+    transform: translateY(-46px);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translateY(46px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-46px);
+    opacity: 0.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewfinder__laser {
+    animation: none;
+  }
+}
+
+/* Torch control sits opposite the on/off control; only rendered when the
+   device really exposes a torch. */
+.viewfinder__control--torch {
+  right: auto;
+  left: 14px;
 }
 
 .viewfinder__badge {
@@ -1092,6 +1122,37 @@ select.input {
   text-align: center;
   color: var(--app-faint);
   font-size: 10.8px;
+}
+
+/* "Barcode belum terdaftar" panel on Cek Harga: replaces the old modal so the
+   camera can keep running and the user can simply aim again. */
+.miss {
+  margin-top: 4px;
+  padding: 16px 16px 14px;
+}
+
+.miss__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--app-amber);
+  font-size: 12.6px;
+  font-weight: 700;
+}
+
+.miss__code {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--app-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.miss__text {
+  margin: 6px 0 0;
+  color: var(--app-muted);
+  font-size: 11.7px;
+  line-height: 1.55;
 }
 
 /* Separator between the search field and the scanner on Cek Harga. */
