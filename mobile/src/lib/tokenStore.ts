@@ -1,8 +1,9 @@
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { Preferences } from '@capacitor/preferences';
+import type { User } from '../types';
 
 /**
- * Auth token storage.
+ * Auth session storage: the token *and* a snapshot of the signed-in user.
  *
  * Android: encrypted with an AES-GCM key held in the Android Keystore
  * (`@aparajita/capacitor-secure-storage`). Web: plain `localStorage`, which is
@@ -13,8 +14,10 @@ import { Preferences } from '@capacitor/preferences';
  */
 const TOKEN_KEY = 'auth_token';
 const LEGACY_TOKEN_KEY = 'auth_token';
+const PROFILE_KEY = 'auth_profile';
 
 let cache: Promise<string | null> | null = null;
+let profileCache: Promise<User | null> | null = null;
 
 async function readLegacyToken(): Promise<string | null> {
   try {
@@ -72,3 +75,42 @@ export const tokenStore = {
     await Preferences.remove({ key: LEGACY_TOKEN_KEY }).catch(() => undefined);
   },
 };
+
+async function loadProfile(): Promise<User | null> {
+  try {
+    const raw = await SecureStorage.getItem(PROFILE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as User;
+    return typeof parsed?.id === 'number' ? parsed : null;
+  } catch {
+    // A corrupt snapshot is not a reason to end the session — `/me` will refill it.
+    return null;
+  }
+}
+
+/**
+ * Snapshot of the signed-in user, stored next to the token so the app can open
+ * already signed in (and show the name) without waiting for the server.
+ */
+export const profileStore = {
+  async get(): Promise<User | null> {
+    profileCache ??= loadProfile();
+    return profileCache;
+  },
+
+  async set(user: User): Promise<void> {
+    profileCache = Promise.resolve(user);
+    await SecureStorage.setItem(PROFILE_KEY, JSON.stringify(user)).catch(() => undefined);
+  },
+
+  async clear(): Promise<void> {
+    profileCache = Promise.resolve(null);
+    await SecureStorage.removeItem(PROFILE_KEY).catch(() => undefined);
+  },
+};
+
+/** Ends the session: the token and its profile snapshot always go together. */
+export async function clearSession(): Promise<void> {
+  await Promise.all([tokenStore.clear(), profileStore.clear()]);
+}
