@@ -17,6 +17,9 @@ import Payment from './Payment';
 import Receipt from './Receipt';
 import Categories from './Categories';
 import Notifications from './Notifications';
+import PrintImage from './PrintImage';
+import TransferReceipt from './TransferReceipt';
+import ShareTargetHandler from '../components/ShareTargetHandler';
 
 /** Pushed pages: full screens with no bottom tab bar. */
 const PUSHED_PATHS = [
@@ -25,6 +28,8 @@ const PUSHED_PATHS = [
   '/tabs/receipt',
   '/tabs/categories',
   '/tabs/notifications',
+  '/tabs/print',
+  '/tabs/transfer',
 ];
 
 /**
@@ -40,6 +45,8 @@ const Tabs: React.FC = () => {
 
   return (
     <IonTabs>
+      <ShareTargetHandler />
+
       <IonRouterOutlet>
         <Route path="/tabs/home" element={<Home />} />
         <Route path="/tabs/products" element={<Products />} />
@@ -51,6 +58,8 @@ const Tabs: React.FC = () => {
         <Route path="/tabs/receipt" element={<Receipt />} />
         <Route path="/tabs/categories" element={<Categories />} />
         <Route path="/tabs/notifications" element={<Notifications />} />
+        <Route path="/tabs/print" element={<PrintImage />} />
+        <Route path="/tabs/transfer" element={<TransferReceipt />} />
 
         <Route path="/tabs" element={<Navigate to="/tabs/home" replace />} />
       </IonRouterOutlet>

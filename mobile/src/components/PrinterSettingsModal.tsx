@@ -210,6 +210,27 @@ const PrinterSettingsModal: React.FC<PrinterSettingsModalProps> = ({ isOpen, onD
               />
             </label>
 
+            <label className="field">
+              <span className="field__label">Saat gambar dibagikan</span>
+              <select
+                className="input"
+                value={settings.shareMode}
+                onChange={(e) =>
+                  setSettings((current) => ({
+                    ...current,
+                    shareMode: e.target.value as PrinterSettings['shareMode'],
+                  }))
+                }
+              >
+                <option value="image">Cetak gambar apa adanya</option>
+                <option value="transfer">Baca jadi struk transfer (teks)</option>
+              </select>
+              <span className="field__hint">
+                Pilih “struk transfer” bila gambar yang dibagikan biasanya bukti transfer bank.
+                Datanya masih bisa diperiksa sebelum dicetak.
+              </span>
+            </label>
+
             <label className="field" style={{ marginBottom: 0 }}>
               <span className="field__label">Footer (opsional)</span>
               <input

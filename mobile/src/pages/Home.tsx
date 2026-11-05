@@ -10,11 +10,12 @@ import {
 } from '@ionic/react';
 import {
   addCircleOutline,
-  cartOutline,
   chevronForwardOutline,
+  imagesOutline,
   logOutOutline,
   pricetagOutline,
   receiptOutline,
+  swapHorizontalOutline,
 } from 'ionicons/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -99,16 +100,22 @@ const Home: React.FC = () => {
       onClick: () => setFormOpen(true),
     },
     {
-      title: 'Kasir',
-      hint: 'Mulai transaksi',
-      icon: cartOutline,
-      onClick: () => navigate('/tabs/pos'),
-    },
-    {
       title: 'Riwayat',
       hint: 'Struk & penjualan',
       icon: receiptOutline,
       onClick: () => navigate('/tabs/history'),
+    },
+    {
+      title: 'Cetak Gambar',
+      hint: 'Mutasi & bukti',
+      icon: imagesOutline,
+      onClick: () => navigate('/tabs/print'),
+    },
+    {
+      title: 'Struk Transfer',
+      hint: 'Bukti TF jadi teks',
+      icon: swapHorizontalOutline,
+      onClick: () => navigate('/tabs/transfer'),
     },
   ];
 

@@ -1744,6 +1744,156 @@ ion-tab-bar.app-tabbar ion-tab-button ion-icon {
   font-size: 19.8px;
 }
 
+/* --- Print image ---------------------------------------------------------
+   Cetak Gambar: shared screenshots are shown as paper-like previews before
+   they are encoded to ESC/POS dots. */
+
+.print-image-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.print-image {
+  position: relative;
+  margin: 0;
+  background: #fff;
+  border: 1px solid var(--app-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.print-image img {
+  display: block;
+  width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+}
+
+.print-image__remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(20, 24, 33, 0.62);
+  color: #fff;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.print-image__range {
+  width: 100%;
+  accent-color: var(--app-blue);
+}
+
+.print-image__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.print-image__check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--app-blue);
+}
+
+.print-image__check .field__hint {
+  display: block;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.print-image__printer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.print-image__printer-name {
+  margin: 0;
+  font-size: 11.7px;
+  color: var(--app-muted);
+}
+
+/* --- Transfer receipt ----------------------------------------------------
+   Struk Transfer: a bank proof screenshot on the left, its editable fields on
+   the right, and the exact text the printer will produce below. */
+
+.transfer-photo {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.transfer-photo img {
+  width: 96px;
+  max-height: 180px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  object-position: top;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.transfer-photo__text {
+  min-width: 0;
+  flex: 1;
+}
+
+.transfer-photo__text .card__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.transfer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.transfer-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.transfer-preview__paper {
+  width: auto;
+  flex: 0 0 auto;
+  font-size: 11.7px;
+  padding: 6px 8px;
+}
+
+.transfer-preview {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  border-radius: 10px;
+  background: #fffdf6;
+  border: 1px dashed var(--app-line);
+  color: #1c1f26;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre;
+}
+
 /* --- Ionic chrome tweaks ------------------------------------------------- */
 
 /* No Ionic toolbars are used for page chrome; the in-page `.page-head` bar
